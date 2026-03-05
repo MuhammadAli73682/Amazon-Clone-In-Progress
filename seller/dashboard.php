@@ -1,6 +1,7 @@
 <?php
 session_start();
 require_once '../config/database.php';
+require_once '../includes/security.php';
 
 if(!isset($_SESSION['user_id']) || $_SESSION['user_type'] != 'seller') {
     header('Location: ../login.php');
@@ -10,38 +11,52 @@ if(!isset($_SESSION['user_id']) || $_SESSION['user_type'] != 'seller') {
 $seller_id = $_SESSION['user_id'];
 
 // handle status update requests from seller
-if($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'], $_POST['order_id'])) {
-    $order_id = intval($_POST['order_id']);
-    $action = $_POST['action'];
-    // map our simple actions to real status values
-    if($action === 'complete') {
-        $new_status = 'delivered';
-    } elseif($action === 'cancel') {
-        $new_status = 'cancelled';
-    }
-    if(isset($new_status)) {
-        // ensure the seller actually has an item in this order before updating
-        $stmt = $pdo->prepare(
-            "UPDATE orders o 
-             JOIN order_items oi ON o.id = oi.order_id 
-             SET o.status = ? 
-             WHERE o.id = ? AND oi.seller_id = ?"
-        );
-        $stmt->execute([$new_status, $order_id, $seller_id]);
-        // if the seller cancelled the order, return stock for the items they sold
-        if($new_status === 'cancelled') {
-            $restock = $pdo->prepare("SELECT product_id, quantity FROM order_items WHERE order_id = ? AND seller_id = ?");
-            $restock->execute([$order_id, $seller_id]);
-            $items = $restock->fetchAll();
-            foreach($items as $item) {
-                $upd = $pdo->prepare("UPDATE products SET stock = stock + ? WHERE id = ?");
-                $upd->execute([$item['quantity'], $item['product_id']]);
+if($_SERVER['REQUEST_METHOD'] === 'POST') {
+    require_csrf_or_fail();
+
+    // update order status
+    if(isset($_POST['order_id']) && isset($_POST['status'])) {
+        $order_id = intval($_POST['order_id']);
+        $new_status = $_POST['status'];
+        // allowed statuses the seller can set (mirror admin options)
+        $allowed_statuses = ['pending','processing','shipped','delivered','cancelled'];
+        if(in_array($new_status, $allowed_statuses)) {
+            // ensure the seller actually has an item in this order before updating
+            $stmt = $pdo->prepare(
+                "UPDATE orders o 
+                 JOIN order_items oi ON o.id = oi.order_id 
+                 SET o.status = ? 
+                 WHERE o.id = ? AND oi.seller_id = ?"
+            );
+            $stmt->execute([$new_status, $order_id, $seller_id]);
+            // if the seller cancelled the order, return stock for the items they sold
+            if($new_status === 'cancelled') {
+                $restock = $pdo->prepare("SELECT product_id, quantity FROM order_items WHERE order_id = ? AND seller_id = ?");
+                $restock->execute([$order_id, $seller_id]);
+                $items = $restock->fetchAll();
+                foreach($items as $item) {
+                    $upd = $pdo->prepare("UPDATE products SET stock = stock + ? WHERE id = ?");
+                    $upd->execute([$item['quantity'], $item['product_id']]);
+                }
             }
+            $update_message = "Order #$order_id updated to " . ucfirst($new_status);
+            // redirect so refreshing the page doesn't resend the form
+            header('Location: dashboard.php?msg=' . urlencode($update_message));
+            exit;
         }
-        $update_message = "Order #$order_id updated to " . ucfirst($new_status);
-        // redirect so refreshing the page doesn't resend the form
-        header('Location: dashboard.php?msg=' . urlencode($update_message));
-        exit;
+    }
+    // handle return request decisions
+    if(isset($_POST['return_id'], $_POST['return_action'])) {
+        $return_id = intval($_POST['return_id']);
+        $action = $_POST['return_action']; // accept or decline
+        $allowed = ['accepted','declined'];
+        if(in_array($action, $allowed)) {
+            $upd = $pdo->prepare("UPDATE return_requests SET status = ? WHERE id = ? AND seller_id = ?");
+            $upd->execute([$action, $return_id, $seller_id]);
+            $update_message = "Return request #$return_id " . ($action === 'accepted' ? 'accepted' : 'declined');
+            header('Location: dashboard.php?msg=' . urlencode($update_message));
+            exit;
+        }
     }
 }
 
@@ -60,7 +75,7 @@ $revenue = $stmt->fetch()['revenue'] ?? 0;
 
 // Get recent orders
 $stmt = $pdo->prepare("
-    SELECT oi.*, p.name, o.created_at, o.status, u.full_name 
+    SELECT oi.*, p.name, o.created_at, o.status, o.shipping_address, u.full_name 
     FROM order_items oi 
     JOIN products p ON oi.product_id = p.id 
     JOIN orders o ON oi.order_id = o.id 
@@ -150,6 +165,7 @@ $return_requests = $stmt->fetchAll();
                                 <th>Amount</th>
                                 <th>Status</th>
                                 <th>Date</th>
+                                <th>Ship Address</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
@@ -178,19 +194,22 @@ $return_requests = $stmt->fetchAll();
                                         <span class="badge bg-<?= $badge ?>"><?= ucfirst($order['status']) ?></span>
                                     </td>
                                 <td><?= date('M j, Y', strtotime($order['created_at'])) ?></td>
+                                <td><?= nl2br(htmlspecialchars($order['shipping_address'])) ?></td>
                                 <td>
-                                        <?php if($show_actions && in_array($order['status'], ['pending','processing','shipped'])): ?>
-                                        <form method="post" class="d-inline">
+                                        <?php if($show_actions): ?>
+                                        <form method="post" class="d-flex align-items-center">
+                                            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(csrf_token()) ?>">
                                             <input type="hidden" name="order_id" value="<?= $order['order_id'] ?>">
-                                            <button type="submit" name="action" value="complete" class="btn btn-sm btn-success">Complete</button>
+                                            <select name="status" class="form-select form-select-sm me-2">
+                                                <?php foreach(['pending','processing','shipped','delivered','cancelled'] as $st): ?>
+                                                    <option value="<?= $st ?>" <?= $order['status'] === $st ? 'selected' : '' ?>><?= ucfirst($st) ?></option>
+                                                <?php endforeach; ?>
+                                            </select>
+                                            <button type="submit" class="btn btn-sm btn-primary">Update</button>
                                         </form>
-                                        <form method="post" class="d-inline">
-                                            <input type="hidden" name="order_id" value="<?= $order['order_id'] ?>">
-                                            <button type="submit" name="action" value="cancel" class="btn btn-sm btn-danger">Cancel</button>
-                                        </form>
-                                    <?php endif; ?>
-                                    <?php $seen_orders[] = $order['order_id']; ?>
-                                </td>
+                                        <?php endif; ?>
+                                        <?php $seen_orders[] = $order['order_id']; ?>
+                                    </td>
                             </tr>
                             <?php endforeach; ?>
                         </tbody>
@@ -216,7 +235,9 @@ $return_requests = $stmt->fetchAll();
                                     <th>Order #</th>
                                     <th>Product</th>
                                     <th>Reason</th>
+                                    <th>Status</th>
                                     <th>Date</th>
+                                    <th>Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -226,7 +247,22 @@ $return_requests = $stmt->fetchAll();
                                         <td><?= htmlspecialchars($req['order_number']) ?></td>
                                         <td><?= htmlspecialchars($req['product_name'] ?? '') ?></td>
                                         <td><?= htmlspecialchars($req['reason']) ?></td>
+                                        <td><?= ucfirst($req['status'] ?? 'pending') ?></td>
                                         <td><?= date('Y-m-d H:i', strtotime($req['created_at'])) ?></td>
+                                        <td>
+                                            <?php if(($req['status'] ?? 'pending') === 'pending'): ?>
+                                                <form method="post" class="d-inline">
+                                                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(csrf_token()) ?>">
+                                                    <input type="hidden" name="return_id" value="<?= $req['id'] ?>">
+                                                    <button type="submit" name="return_action" value="accepted" class="btn btn-sm btn-success">Accept</button>
+                                                </form>
+                                                <form method="post" class="d-inline">
+                                                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(csrf_token()) ?>">
+                                                    <input type="hidden" name="return_id" value="<?= $req['id'] ?>">
+                                                    <button type="submit" name="return_action" value="declined" class="btn btn-sm btn-danger">Decline</button>
+                                                </form>
+                                            <?php endif; ?>
+                                        </td>
                                     </tr>
                                 <?php endforeach; ?>
                             </tbody>

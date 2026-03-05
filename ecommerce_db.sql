@@ -186,14 +186,17 @@ INSERT INTO `products` (`id`, `seller_id`, `name`, `description`, `price`, `stoc
 --
 
 CREATE TABLE `return_requests` (
-  `id` int(11) NOT NULL,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `order_number` varchar(50) NOT NULL,
   `product_name` varchar(255) NOT NULL,
+  `product_id` int(11) DEFAULT NULL,
+  `seller_id` int(11) DEFAULT NULL,
+  `buyer_id` int(11) DEFAULT NULL,
   `reason` text NOT NULL,
+  `status` varchar(20) NOT NULL DEFAULT 'pending',
   `image` varchar(255) DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  `product_id` int(11) DEFAULT NULL,
-  `seller_id` int(11) DEFAULT NULL
+  PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
@@ -461,7 +464,8 @@ ALTER TABLE `products`
 --
 ALTER TABLE `return_requests`
   ADD CONSTRAINT `return_requests_ibfk_1` FOREIGN KEY (`product_id`) REFERENCES `products` (`id`),
-  ADD CONSTRAINT `return_requests_ibfk_2` FOREIGN KEY (`seller_id`) REFERENCES `users` (`id`);
+  ADD CONSTRAINT `return_requests_ibfk_2` FOREIGN KEY (`seller_id`) REFERENCES `users` (`id`),
+  ADD CONSTRAINT `return_requests_ibfk_3` FOREIGN KEY (`buyer_id`) REFERENCES `users` (`id`);
 
 --
 -- Constraints for table `reviews`

@@ -2,12 +2,17 @@
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
+require_once __DIR__ . '/security.php';
 
 // Safe session variables
 $user_id   = $_SESSION['user_id']   ?? null;
 $user_type = $_SESSION['user_type'] ?? null;
 $full_name = $_SESSION['full_name'] ?? 'User';
+$csrfToken = csrf_token();
 ?>
+<script>
+window.CSRF_TOKEN = <?= json_encode($csrfToken) ?>;
+</script>
 
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top">
     <div class="container-fluid">
@@ -25,17 +30,19 @@ $full_name = $_SESSION['full_name'] ?? 'User';
         <div class="collapse navbar-collapse" id="navbarNav">
             
             <!-- Search Bar -->
-            <form class="d-flex mx-auto search-form" action="<?= BASE_URL ?>/products.php" method="GET">
+            <form class="d-flex mx-auto search-form" action="<?= BASE_URL ?>/products.php" method="GET" autocomplete="off">
                 <input 
                     class="form-control me-2" 
                     type="search" 
                     name="search" 
+                    id="globalSearch"
                     placeholder="Search products..." 
                     style="width: 500px;"
                 >
                 <button class="btn btn-warning" type="submit">
                     <i class="fas fa-search"></i>
                 </button>
+                <div id="searchSuggestions" class="list-group position-absolute" style="z-index:1000;width:500px;display:none;"></div>
             </form>
             
             <!-- Right Menu -->
@@ -138,3 +145,36 @@ $full_name = $_SESSION['full_name'] ?? 'User';
         </div>
     </div>
 </nav>
+<script>
+$(function() {
+    const $input = $('#globalSearch');
+    const $suggest = $('#searchSuggestions');
+    let timer;
+    $input.on('input', function() {
+        clearTimeout(timer);
+        const val = $(this).val().trim();
+        if(val.length < 2) {
+            $suggest.hide();
+            return;
+        }
+        timer = setTimeout(function() {
+            $.getJSON('api/search.php', { term: val }, function(data) {
+                if(data.suggestions && data.suggestions.length) {
+                    let html = '';
+                    data.suggestions.forEach(function(s) {
+                        html += '<a href="products.php?search='+encodeURIComponent(s.label)+'" class="list-group-item list-group-item-action">'+s.label+'</a>';
+                    });
+                    $suggest.html(html).show();
+                } else {
+                    $suggest.hide();
+                }
+            });
+        }, 300);
+    });
+    $(document).on('click', function(e) {
+        if(!$(e.target).closest('#globalSearch, #searchSuggestions').length) {
+            $suggest.hide();
+        }
+    });
+});
+</script>

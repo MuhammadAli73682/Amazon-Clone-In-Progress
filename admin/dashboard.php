@@ -1,6 +1,7 @@
 <?php
 session_start();
 require_once '../config/database.php';
+require_once '../includes/security.php';
 
 // only accessible to admins
 if(!isset($_SESSION['user_id']) || $_SESSION['user_type'] !== 'admin') {
@@ -9,16 +10,31 @@ if(!isset($_SESSION['user_id']) || $_SESSION['user_type'] !== 'admin') {
 }
 
 // handle order status update from admin
-if($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_order_status']) && isset($_POST['order_id'])) {
-    $order_id = intval($_POST['order_id']);
-    $new_status = $_POST['status'] ?? '';
-    $allowed = ['pending','processing','shipped','delivered','cancelled'];
-    if(in_array($new_status, $allowed)) {
-        $upd = $pdo->prepare("UPDATE orders SET status = ? WHERE id = ?");
-        $upd->execute([$new_status, $order_id]);
-        $update_message = "Order #$order_id status updated to '" . htmlspecialchars($new_status) . "'.";
-    } else {
-        $update_message = 'Invalid status selected.';
+if($_SERVER['REQUEST_METHOD'] === 'POST') {
+    require_csrf_or_fail();
+
+    if(isset($_POST['update_order_status']) && isset($_POST['order_id'])) {
+        $order_id = intval($_POST['order_id']);
+        $new_status = $_POST['status'] ?? '';
+        $allowed = ['pending','processing','shipped','delivered','cancelled'];
+        if(in_array($new_status, $allowed)) {
+            $upd = $pdo->prepare("UPDATE orders SET status = ? WHERE id = ?");
+            $upd->execute([$new_status, $order_id]);
+            $update_message = "Order #$order_id status updated to '" . htmlspecialchars($new_status) . "'.";
+        } else {
+            $update_message = 'Invalid status selected.';
+        }
+    }
+    // handle return request decisions from admin
+    if(isset($_POST['return_id'], $_POST['return_action'])) {
+        $return_id = intval($_POST['return_id']);
+        $action = $_POST['return_action']; // accepted/declined
+        $allowed2 = ['accepted','declined'];
+        if(in_array($action, $allowed2)) {
+            $upd = $pdo->prepare("UPDATE return_requests SET status = ? WHERE id = ?");
+            $upd->execute([$action, $return_id]);
+            $update_message = "Return request #$return_id " . ($action === 'accepted' ? 'accepted' : 'declined');
+        }
     }
 }
 // gather statistics
@@ -39,7 +55,7 @@ $all_products = $pdo->query("SELECT id, name, price, stock, status FROM products
 $all_buyers = $pdo->query("SELECT id, full_name, email, created_at FROM users WHERE user_type='buyer' ORDER BY id DESC")->fetchAll();
 $all_sellers = $pdo->query("SELECT id, full_name, email, shop_name, created_at FROM users WHERE user_type='seller' ORDER BY id DESC")->fetchAll();
 // since the orders table has no `order_number` column we use the id as the number
-$all_orders = $pdo->query("SELECT o.id AS order_number, o.total_amount, o.created_at, o.status, o.user_id, u.full_name AS buyer_name FROM orders o LEFT JOIN users u ON o.user_id = u.id ORDER BY o.id DESC")->fetchAll();
+$all_orders = $pdo->query("SELECT o.id AS order_number, o.total_amount, o.created_at, o.status, o.shipping_address, o.user_id, u.full_name AS buyer_name FROM orders o LEFT JOIN users u ON o.user_id = u.id ORDER BY o.id DESC")->fetchAll();
 
 // recent contact messages and returns
 $stmt = $pdo->query("SELECT * FROM contacts ORDER BY created_at DESC LIMIT 10");
@@ -184,7 +200,7 @@ $return_requests = $stmt->fetchAll();
                 <?php else: ?>
                     <div class="table-responsive">
                     <table class="table table-striped">
-                            <thead><tr><th>ID</th><th>Order #</th><th>Buyer</th><th>Total</th><th>Date</th><th>Status</th><th>Action</th></tr></thead>
+                            <thead><tr><th>ID</th><th>Order #</th><th>Buyer</th><th>Total</th><th>Date</th><th>Status</th><th>Ship Address</th><th>Action</th></tr></thead>
                             <tbody>
                             <?php foreach($all_orders as $o): ?>
                                 <tr>
@@ -194,8 +210,10 @@ $return_requests = $stmt->fetchAll();
                                     <td><?= number_format($o['total_amount'],2) ?></td>
                                     <td><?= date('Y-m-d', strtotime($o['created_at'])) ?></td>
                                     <td><?= htmlspecialchars($o['status']) ?></td>
+                                    <td><?= nl2br(htmlspecialchars($o['shipping_address'])) ?></td>
                                     <td>
                                         <form method="post" class="d-flex align-items-center">
+                                            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(csrf_token()) ?>">
                                             <input type="hidden" name="order_id" value="<?= $o['order_number'] ?>">
                                             <select name="status" class="form-select form-select-sm me-2">
                                                 <?php foreach(['pending','processing','shipped','delivered','cancelled'] as $st): ?>
@@ -244,7 +262,7 @@ $return_requests = $stmt->fetchAll();
             <?php else: ?>
                 <div class="table-responsive">
                 <table class="table table-striped">
-                    <thead><tr><th>Order #</th><th>Product</th><th>Seller</th><th></th>Reason</th><th>Image</th><th>Date</th></tr></thead>
+                    <thead><tr><th>Order #</th><th>Product</th><th>Seller</th><th>Reason</th><th>Status</th><th>Image</th><th>Date</th><th>Action</th></tr></thead>
                     <tbody>
                     <?php foreach($return_requests as $r): ?>
                         <tr>
@@ -252,8 +270,23 @@ $return_requests = $stmt->fetchAll();
                             <td><?= htmlspecialchars($r['product_name']) ?></td>
                             <td><?= htmlspecialchars($r['seller_name'] ?? 'N/A') ?></td>
                             <td><?= htmlspecialchars($r['reason']) ?></td>
+                            <td><?= ucfirst($r['status'] ?? 'pending') ?></td>
                             <td><?php if($r['image']): ?><a href="<?= BASE_URL ?>/<?= htmlspecialchars($r['image']) ?>" target="_blank">View</a><?php endif; ?></td>
                             <td><?= date('Y-m-d H:i', strtotime($r['created_at'])) ?></td>
+                            <td>
+                                <?php if(($r['status'] ?? 'pending') === 'pending'): ?>
+                                    <form method="post" class="d-inline">
+                                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(csrf_token()) ?>">
+                                        <input type="hidden" name="return_id" value="<?= $r['id'] ?>">
+                                        <button type="submit" name="return_action" value="accepted" class="btn btn-sm btn-success">Accept</button>
+                                    </form>
+                                    <form method="post" class="d-inline">
+                                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(csrf_token()) ?>">
+                                        <input type="hidden" name="return_id" value="<?= $r['id'] ?>">
+                                        <button type="submit" name="return_action" value="declined" class="btn btn-sm btn-danger">Decline</button>
+                                    </form>
+                                <?php endif; ?>
+                            </td>
                         </tr>
                     <?php endforeach; ?>
                     </tbody>

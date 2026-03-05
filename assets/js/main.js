@@ -1,6 +1,14 @@
 $(document).ready(function() {
+    const csrfToken = window.CSRF_TOKEN || '';
+
     // Update cart count on page load
     updateCartCount();
+
+    // load full cart if cart page is open (AJAX friendly)
+    if($('.cart-item').length === 0 && window.location.pathname.endsWith('cart.php')) {
+        // page will render server side; but this check leaves room for SPA updates
+        refreshCartItems();
+    }
     
     // Add to cart functionality
     $('.add-to-cart').click(function() {
@@ -9,7 +17,7 @@ $(document).ready(function() {
         $.ajax({
             url: 'api/cart.php',
             method: 'POST',
-            data: { action: 'add', product_id: productId },
+            data: { action: 'add', product_id: productId, csrf_token: csrfToken },
             dataType: 'json',
             success: function(response) {
                 if(response.success) {
@@ -34,7 +42,7 @@ $(document).ready(function() {
         $.ajax({
             url: 'api/wishlist.php',
             method: 'POST',
-            data: { action: 'add', product_id: productId },
+            data: { action: 'add', product_id: productId, csrf_token: csrfToken },
             dataType: 'json',
             success: function(response) {
                 if(response.success) {
@@ -52,7 +60,7 @@ $(document).ready(function() {
             $.ajax({
                 url: 'api/wishlist.php',
                 method: 'POST',
-                data: { action: 'remove', product_id: productId },
+                data: { action: 'remove', product_id: productId, csrf_token: csrfToken },
                 dataType: 'json',
                 success: function(response) {
                     if(response.success) {
@@ -73,7 +81,7 @@ $(document).ready(function() {
         $.ajax({
             url: 'api/cart.php',
             method: 'POST',
-            data: { action: 'update', cart_id: cartId, product_id: productId, quantity: quantity },
+            data: { action: 'update', cart_id: cartId, product_id: productId, quantity: quantity, csrf_token: csrfToken },
             dataType: 'json',
             success: function(response) {
                 if(response.success) {
@@ -89,23 +97,28 @@ $(document).ready(function() {
             const cartId = $(this).data('cart-id');
             const productId = $(this).data('product-id');
             
-            $.ajax({
-                url: 'api/cart.php',
-                method: 'POST',
-                data: { action: 'remove', cart_id: cartId, product_id: productId },
-                dataType: 'json',
-                success: function(response) {
-                    if(response.success) {
-                        location.reload();
+            {
+                let payload = { action: 'remove', csrf_token: csrfToken };
+                if(cartId) payload.cart_id = cartId;
+                if(productId) payload.product_id = productId;
+                $.ajax({
+                    url: 'api/cart.php',
+                    method: 'POST',
+                    data: payload,
+                    dataType: 'json',
+                    success: function(response) {
+                        if(response.success) {
+                            location.reload();
+                        }
                     }
-                }
-            });
+                });
+            }
         }
     });
     
-    // Update cart count
+    // Update cart count and optionally refresh list
     function updateCartCount() {
-        // update cart
+        // update cart count
         $.ajax({
             url: 'api/cart.php',
             method: 'GET',
@@ -117,7 +130,7 @@ $(document).ready(function() {
                 }
             }
         });
-        // update wishlist
+        // update wishlist count
         $.ajax({
             url: 'api/wishlist.php',
             method: 'GET',
@@ -126,6 +139,79 @@ $(document).ready(function() {
             success: function(response) {
                 if(response.count !== undefined) {
                     $('#wishlist-count').text(response.count);
+                }
+            }
+        });
+    }
+
+    // refresh cart rows using API
+    function refreshCartItems() {
+        $.ajax({
+            url: 'api/cart.php',
+            method: 'GET',
+            data: { action: 'list' },
+            dataType: 'json',
+            success: function(response) {
+                if(response.items) {
+                    const container = $('.container.my-5');
+                    // building a simple table or list
+                    let html = '<h2 class="mb-4">Shopping Cart</h2>';
+                    if(response.items.length === 0) {
+                        html += '<div class="alert alert-info">Your cart is empty. <a href="products.php">Continue shopping</a></div>';
+                    } else {
+                        html += '<table class="table"><thead><tr><th>Product</th><th>Price</th><th>Qty</th><th>Actions</th></tr></thead><tbody>';
+                        response.items.forEach(function(item) {
+                            html += '<tr>' +
+                                    '<td>'+item.name+'</td>' +
+                                    '<td>$'+parseFloat(item.price).toFixed(2)+'</td>' +
+                                    '<td>'+item.quantity+'</td>' +
+                                    '<td><button class="btn btn-sm btn-danger remove-from-cart" data-cart-id="'+item.id+'" data-product-id="'+item.product_id+'">Remove</button></td>' +
+                                    '</tr>';
+                        });
+                        html += '</tbody></table>';
+                        html += '<button id="clear-cart" class="btn btn-outline-secondary">Clear cart</button>';
+                    }
+                    container.html(html);
+                    // rebind events
+                    $('.remove-from-cart').click(function() {
+                        if(confirm('Remove this item from cart?')) {
+                            const cartId = $(this).data('cart-id');
+                            const productId = $(this).data('product-id');
+                            {
+                                let payload = { action: 'remove', csrf_token: csrfToken };
+                                if(cartId) payload.cart_id = cartId;
+                                if(productId) payload.product_id = productId;
+                                $.ajax({
+                                    url: 'api/cart.php',
+                                    method: 'POST',
+                                    data: payload,
+                                    dataType: 'json',
+                                    success: function(resp) {
+                                        if(resp.success) {
+                                            refreshCartItems();
+                                            updateCartCount();
+                                        }
+                                    }
+                                });
+                            }
+                        }
+                    });
+                    $('#clear-cart').click(function() {
+                        if(confirm('Clear entire cart?')) {
+                            $.ajax({
+                                url: 'api/cart.php',
+                                method: 'POST',
+                                data: { action: 'clear', csrf_token: csrfToken },
+                                dataType: 'json',
+                                success: function(resp) {
+                                    if(resp.success) {
+                                        refreshCartItems();
+                                        updateCartCount();
+                                    }
+                                }
+                            });
+                        }
+                    });
                 }
             }
         });

@@ -1,6 +1,7 @@
 <?php
 session_start();
 require_once 'config/database.php';
+require_once 'includes/security.php';
 
 // Redirect if already logged in
 if(isset($_SESSION['user_id'])) {
@@ -10,18 +11,37 @@ if(isset($_SESSION['user_id'])) {
 
 $error = '';
 
-if($_SERVER['REQUEST_METHOD'] == 'POST') {
-    // trim whitespace and force lowercase to avoid simple typos
-    $email = strtolower(trim($_POST['email']));
-    $password = $_POST['password'];
+// initialize attempt counter
+if(!isset($_SESSION['login_attempts'])) {
+    $_SESSION['login_attempts'] = 0;
+}
 
-    // Fetch user by email (emails stored lowercase in this app)
-    $stmt = $pdo->prepare("SELECT * FROM users WHERE email = ?");
-    $stmt->execute([$email]);
-    $user = $stmt->fetch();
+if($_SERVER['REQUEST_METHOD'] == 'POST') {
+    require_csrf_or_fail();
+
+    // simple rate limit: max 5 attempts per 15 minutes
+    if($_SESSION['login_attempts'] >= 5 && time() - ($_SESSION['last_attempt_time'] ?? 0) < 900) {
+        $error = 'Too many login attempts. Please try again later.';
+    } else {
+        $_SESSION['last_attempt_time'] = time();
+        $_SESSION['login_attempts']++;
+
+        // trim whitespace and force lowercase to avoid simple typos
+        $email = strtolower(trim($_POST['email']));
+        $password = $_POST['password'];
+
+        // Fetch user by email (emails stored lowercase in this app)
+        $stmt = $pdo->prepare("SELECT * FROM users WHERE email = ?");
+        $stmt->execute([$email]);
+        $user = $stmt->fetch();
 
     // Verify password using hash; also allow a plaintext match for legacy/admin accounts
     if($user && (password_verify($password, $user['password']) || $password === $user['password'])) {
+            // reset throttle counter
+            $_SESSION['login_attempts'] = 0;
+            $_SESSION['last_attempt_time'] = 0;
+
+        // set fundamental session values
         $_SESSION['user_id'] = $user['id'];
         $_SESSION['user_type'] = $user['user_type'];
         $_SESSION['full_name'] = $user['full_name'];
@@ -48,7 +68,8 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
     } else {
         $error = 'Invalid email or password';
     }
-}
+        }
+    }
 ?>
 
 <!DOCTYPE html>
@@ -76,6 +97,7 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
                         <?php endif; ?>
 
                         <form method="POST">
+                            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(csrf_token()) ?>">
                             <div class="mb-3">
                                 <label class="form-label">Email</label>
                                 <input type="email" name="email" class="form-control" required>

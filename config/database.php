@@ -1,6 +1,8 @@
 <?php
 // base URL for links (adjust to match your project folder or domain)
-define('BASE_URL', '/Ecommerce-Website');
+// Changed from '/Ecommerce-Website' to use the actual project folder name
+// (spaces may need encoding or you can use a hyphen/underscore if preferred)
+define('BASE_URL', '/Amazon Clone');
 
 $host = 'localhost';
 $dbname = 'ecommerce_db';

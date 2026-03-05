@@ -83,6 +83,15 @@ foreach($orders as &$order) {
                         </ul>
                     <?php endif; ?>
                     <p><strong>Shipping Address:</strong> <?= nl2br(htmlspecialchars($order['shipping_address'])) ?></p>
+                    <?php if(!empty($order['phone'])): ?>
+                        <p><strong>Phone:</strong> <?= htmlspecialchars($order['phone']) ?></p>
+                    <?php endif; ?>
+                    <?php if(!empty($order['alt_phone'])): ?>
+                        <p><strong>Alt Phone:</strong> <?= htmlspecialchars($order['alt_phone']) ?></p>
+                    <?php endif; ?>
+                    <?php if(!empty($order['rider_instructions'])): ?>
+                        <p><strong>Rider Instructions:</strong> <?= nl2br(htmlspecialchars($order['rider_instructions'])) ?></p>
+                    <?php endif; ?>
                 </div>
                 <div class="col-md-4 text-end">
                     <?php

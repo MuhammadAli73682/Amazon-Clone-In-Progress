@@ -36,6 +36,11 @@ if(isset($_GET['seller_id']) && is_numeric($_GET['seller_id'])) {
     $params[] = $_GET['seller_id'];
 }
 
+// pagination parameters
+$page = max(1, intval($_GET['page'] ?? 1));
+$perPage = 12;
+$offset = ($page - 1) * $perPage;
+
 // include average rating and review count
 $sql = "SELECT p.*, u.shop_name, 
                COALESCE(AVG(r.rating),0) as avg_rating, 
@@ -45,10 +50,18 @@ $sql = "SELECT p.*, u.shop_name,
         LEFT JOIN reviews r ON r.product_id = p.id
         WHERE " . implode(' AND ', $where) . "
         GROUP BY p.id
-        ORDER BY $orderClause";
+        ORDER BY $orderClause
+        LIMIT $perPage OFFSET $offset";
 $stmt = $pdo->prepare($sql);
 $stmt->execute($params);
 $products = $stmt->fetchAll();
+
+// get total count for pagination
+$countSql = "SELECT COUNT(DISTINCT p.id) as cnt FROM products p WHERE " . implode(' AND ', $where);
+$countStmt = $pdo->prepare($countSql);
+$countStmt->execute($params);
+$totalCount = $countStmt->fetchColumn();
+$totalPages = ceil($totalCount / $perPage);
 
 // if logged in, get wishlist product ids for current user
 $wishlistIds = [];
@@ -132,7 +145,7 @@ if(isset($_GET['sort'])) { $linkParams['sort'] = $_GET['sort']; }
                     </div>
                 </div>
                 
-                <p class="text-muted"><?= count($products) ?> products found</p>
+                <p class="text-muted"><?= $totalCount ?> products found</p>
                 
                 <div class="row">
                     <?php foreach($products as $product): ?>
@@ -172,6 +185,24 @@ if(isset($_GET['sort'])) { $linkParams['sort'] = $_GET['sort']; }
                         <div class="alert alert-info">No products found</div>
                     </div>
                     <?php endif; ?>
+                </div>
+
+                <!-- pagination -->
+                <?php if($totalPages > 1): ?>
+                <nav>
+                    <ul class="pagination">
+                        <?php for($p=1; $p<=$totalPages; $p++): ?>
+                        <?php
+                        $paramsForPage = $_GET;
+                        $paramsForPage['page'] = $p;
+                        ?>
+                        <li class="page-item <?= $p==$page ? 'active' : '' ?>">
+                            <a class="page-link" href="products.php?<?= http_build_query($paramsForPage) ?>"><?= $p ?></a>
+                        </li>
+                        <?php endfor; ?>
+                    </ul>
+                </nav>
+                <?php endif; ?>
                 </div>
             </div>
         </div>

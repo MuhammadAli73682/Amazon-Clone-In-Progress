@@ -1,6 +1,7 @@
 <?php
 session_start();
 require_once '../config/database.php';
+require_once '../includes/security.php';
 
 header('Content-Type: application/json');
 
@@ -23,18 +24,30 @@ if($_SERVER['REQUEST_METHOD'] == 'GET') {
 }
 
 $action = $_POST['action'] ?? '';
+if (!csrf_validate($_POST['csrf_token'] ?? '')) {
+    json_error('Invalid CSRF token', 403);
+}
 if($action == 'add') {
-    $product_id = $_POST['product_id'];
+    $product_id = intval($_POST['product_id'] ?? 0);
+    if($product_id <= 0) {
+        json_error('Invalid product');
+    }
     $stmt = $pdo->prepare("INSERT IGNORE INTO wishlist (user_id, product_id) VALUES (?, ?)");
     $stmt->execute([$user_id, $product_id]);
     echo json_encode(['success' => true]);
 } elseif($action == 'remove') {
-    $product_id = $_POST['product_id'];
+    $product_id = intval($_POST['product_id'] ?? 0);
+    if($product_id <= 0) {
+        json_error('Invalid product');
+    }
     $stmt = $pdo->prepare("DELETE FROM wishlist WHERE user_id = ? AND product_id = ?");
     $stmt->execute([$user_id, $product_id]);
     echo json_encode(['success' => true]);
 } elseif($action == 'check') {
-    $product_id = $_POST['product_id'];
+    $product_id = intval($_POST['product_id'] ?? 0);
+    if($product_id <= 0) {
+        json_error('Invalid product');
+    }
     $stmt = $pdo->prepare("SELECT id FROM wishlist WHERE user_id = ? AND product_id = ?");
     $stmt->execute([$user_id, $product_id]);
     echo json_encode(['in_wishlist' => (bool)$stmt->fetch()]);

@@ -104,11 +104,14 @@ CREATE TABLE return_requests (
     product_name VARCHAR(255) NOT NULL,
     product_id INT DEFAULT NULL,
     seller_id INT DEFAULT NULL,
+    buyer_id INT DEFAULT NULL,
     reason TEXT NOT NULL,
+    status VARCHAR(20) NOT NULL DEFAULT 'pending',
     image VARCHAR(255),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (product_id) REFERENCES products(id),
-    FOREIGN KEY (seller_id) REFERENCES users(id)
+    FOREIGN KEY (seller_id) REFERENCES users(id),
+    FOREIGN KEY (buyer_id) REFERENCES users(id)
 );
 
 -- Password reset table

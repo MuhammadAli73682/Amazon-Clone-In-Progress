@@ -1,6 +1,7 @@
 <?php
 session_start();
 require_once 'config/database.php';
+require_once 'includes/security.php';
 
 $product_id = $_GET['id'] ?? 0;
 
@@ -22,14 +23,18 @@ if(!$product) {
 
 // handle review form
 if($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['rating']) && isset($_POST['comment']) && isset($_SESSION['user_id'])) {
+    require_csrf_or_fail();
+
     $rating = max(1, min(5, intval($_POST['rating'])));
     $comment = trim($_POST['comment']);
     $user_id = $_SESSION['user_id'];
-    $stmt = $pdo->prepare("INSERT INTO reviews (product_id, user_id, rating, comment) VALUES (?, ?, ?, ?)");
-    $stmt->execute([$product_id, $user_id, $rating, $comment]);
-    // reload page to show new review
-    header('Location: product-detail.php?id=' . $product_id);
-    exit;
+    if($comment !== '') {
+        $stmt = $pdo->prepare("INSERT INTO reviews (product_id, user_id, rating, comment) VALUES (?, ?, ?, ?)");
+        $stmt->execute([$product_id, $user_id, $rating, $comment]);
+        // reload page to show new review
+        header('Location: product-detail.php?id=' . $product_id);
+        exit;
+    }
 }
 
 // Get reviews
@@ -143,6 +148,7 @@ $reviews = $stmt->fetchAll();
             <div class="col-12">
                 <h4>Leave a Review</h4>
                 <form method="POST">
+                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(csrf_token()) ?>">
                     <div class="mb-3">
                         <label class="form-label">Rating</label><br>
                         <?php for($r=1;$r<=5;$r++): ?>

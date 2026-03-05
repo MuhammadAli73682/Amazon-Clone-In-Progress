@@ -1,9 +1,36 @@
 <?php
 session_start();
 require_once 'config/database.php';
+require_once 'includes/security.php';
 
 // allow both logged-in users and guests
 $user_id = $_SESSION['user_id'] ?? null;
+// make sure orders table has necessary columns
+try {
+    $pdo->exec("ALTER TABLE orders ADD COLUMN IF NOT EXISTS phone VARCHAR(20) NULL");
+    $pdo->exec("ALTER TABLE orders ADD COLUMN IF NOT EXISTS alt_phone VARCHAR(20) NULL");
+    $pdo->exec("ALTER TABLE orders ADD COLUMN IF NOT EXISTS rider_instructions TEXT NULL");
+    // unique constraint on phone to prevent duplicates
+    $pdo->exec("ALTER TABLE orders ADD UNIQUE INDEX IF NOT EXISTS idx_orders_phone (phone)");
+} catch(Exception $e) {}
+// ensure users.phone uniqueness for account updates
+try {
+    $pdo->exec("ALTER TABLE users ADD UNIQUE INDEX IF NOT EXISTS idx_users_phone (phone)");
+} catch(Exception $e) {}
+
+$email_prefill = '';
+$phone_prefill = '';
+$alt_prefill = '';
+if($user_id) {
+    $u = $pdo->prepare("SELECT email, phone FROM users WHERE id = ?");
+    $u->execute([$user_id]);
+    $userRow = $u->fetch();
+    if($userRow) {
+        $email_prefill = $userRow['email'];
+        $phone_prefill = $userRow['phone'];
+    // alt number not stored on profile
+    }
+}
 
 // fetch cart items based on session or database
 if($user_id) {
@@ -54,33 +81,104 @@ if(isset($error)) {
 }
 
 if($_SERVER['REQUEST_METHOD'] == 'POST' && empty($error)) {
+    require_csrf_or_fail();
+
+    // grab contact inputs early
+    $phone = trim($_POST['phone'] ?? '');
+    $alt_phone = trim($_POST['alt_phone'] ?? '');
+    // preserve values for redisplay
+    $phone_prefill = $phone;
+    $alt_prefill = $alt_phone;
+    $email_prefill = trim($_POST['email'] ?? $email_prefill);
+
     // if guest, collect personal info and create or lookup user
     if(!$user_id) {
         $full_name = trim($_POST['full_name']);
         $email = strtolower(trim($_POST['email']));
         $password = $_POST['password'] ?? '';
-
-        // check for existing account
-        $stmt = $pdo->prepare("SELECT id, full_name FROM users WHERE email = ?");
-        $stmt->execute([$email]);
-        $existing = $stmt->fetch();
-        if($existing) {
-            $user_id = $existing['id'];
-            $full_name = $existing['full_name'];
-        } else {
-            $hash = $password ? password_hash($password, PASSWORD_DEFAULT) : password_hash(bin2hex(random_bytes(4)), PASSWORD_DEFAULT);
-            $stmt = $pdo->prepare("INSERT INTO users (email, password, full_name, user_type) VALUES (?, ?, ?, 'buyer')");
-            $stmt->execute([$email, $hash, $full_name]);
-            $user_id = $pdo->lastInsertId();
+        if($full_name === '' || !filter_var($email, FILTER_VALIDATE_EMAIL) || $phone === '') {
+            $error = 'Please enter a valid name, email and phone number.';
         }
-        // log them in for the session
-        $_SESSION['user_id'] = $user_id;
-        $_SESSION['user_type'] = 'buyer';
-        $_SESSION['full_name'] = $full_name;
+        if($alt_phone && $alt_phone === $phone) {
+            $error = 'Alternate number cannot be the same as primary.';
+        }
+
+        if(empty($error)) {
+            // check for existing account
+            $stmt = $pdo->prepare("SELECT id, full_name, phone FROM users WHERE email = ?");
+            $stmt->execute([$email]);
+            $existing = $stmt->fetch();
+            if($existing) {
+                $user_id = $existing['id'];
+                $full_name = $existing['full_name'];
+                // update phone if missing and not duplicate
+                if(!$existing['phone'] && $phone) {
+                    // ensure phone uniqueness
+                    $dup = $pdo->prepare("SELECT id FROM users WHERE phone = ? AND id <> ?");
+                    $dup->execute([$phone, $user_id]);
+                    if($dup->fetch()) {
+                        $error = 'Primary phone number already in use by another account.';
+                    } else {
+                        $updPhone = $pdo->prepare("UPDATE users SET phone = ? WHERE id = ?");
+                        $updPhone->execute([$phone, $user_id]);
+                    }
+                }
+            } else {
+                $hash = $password ? password_hash($password, PASSWORD_DEFAULT) : password_hash(bin2hex(random_bytes(4)), PASSWORD_DEFAULT);
+                // check duplicate phone before insert
+                $dup = $pdo->prepare("SELECT id FROM users WHERE phone = ?");
+                $dup->execute([$phone]);
+                if($dup->fetch()) {
+                    $error = 'Primary phone number already in use by another account.';
+                } else {
+                    $stmt = $pdo->prepare("INSERT INTO users (email, password, full_name, user_type, phone) VALUES (?, ?, ?, 'buyer', ?)");
+                    $stmt->execute([$email, $hash, $full_name, $phone]);
+                    $user_id = $pdo->lastInsertId();
+                }
+                $user_id = $pdo->lastInsertId();
+            }
+
+            // log them in for the session
+            $_SESSION['user_id'] = $user_id;
+            $_SESSION['user_type'] = 'buyer';
+            $_SESSION['full_name'] = $full_name;
+        }
     }
 
-    $address = $_POST['address'];
+    // build full address string
+    $line1 = trim($_POST['address_line1'] ?? '');
+    $line2 = trim($_POST['address_line2'] ?? '');
+    $city = trim($_POST['city'] ?? '');
+    $state = trim($_POST['state'] ?? '');
+    $zip = trim($_POST['zip'] ?? '');
+    $country = trim($_POST['country'] ?? '');
+    $phone = trim($_POST['phone'] ?? '');
     $payment_method = $_POST['payment_method'];
+
+    if($line1 === '' || $city === '' || $state === '' || $zip === '' || $country === '' || $phone === '' || !in_array($payment_method, ['cod', 'card'], true)) {
+        $error = 'Please provide complete shipping information and payment method.';
+    }
+    if($alt_phone && $alt_phone === $phone) {
+        $error = 'Alternate number cannot match primary phone.';
+    }
+    // duplicate phone across orders is not permitted
+    if(empty($error)) {
+        $dup = $pdo->prepare("SELECT id FROM orders WHERE phone = ?");
+        $dup->execute([$phone]);
+        if($dup->fetch()) {
+            $error = 'Primary phone number already in use by another order.';
+        }
+    }
+
+    $address = $line1;
+    if($line2) { $address .= "\n" . $line2; }
+    $address .= "\n" . $city . ', ' . $state . ' ' . $zip . "\n" . $country . "\nPhone: " . $phone;
+    // previously we appended alt_phone to shipping string; now it's stored separately
+    // but keep it in address for compatibility/legacy
+    if($alt_phone) {
+        $address .= "\nAlt phone: " . $alt_phone;
+    }
+    $rider_instructions = trim($_POST['rider_instructions'] ?? '');
     
     $total = 0;
     foreach($cart_items as $item) {
@@ -92,8 +190,8 @@ if($_SERVER['REQUEST_METHOD'] == 'POST' && empty($error)) {
         $pdo->beginTransaction();
         
         // Create order
-        $stmt = $pdo->prepare("INSERT INTO orders (user_id, total_amount, shipping_address, payment_method) VALUES (?, ?, ?, ?)");
-        $stmt->execute([$user_id, $total, $address, $payment_method]);
+        $stmt = $pdo->prepare("INSERT INTO orders (user_id, total_amount, shipping_address, payment_method, phone, alt_phone, rider_instructions) VALUES (?, ?, ?, ?, ?, ?, ?)");
+        $stmt->execute([$user_id, $total, $address, $payment_method, $phone, $alt_phone ?: null, $rider_instructions]);
         $order_id = $pdo->lastInsertId();
         
         // Create order items and update stock
@@ -123,7 +221,13 @@ if($_SERVER['REQUEST_METHOD'] == 'POST' && empty($error)) {
         exit;
     } catch(Exception $e) {
         $pdo->rollBack();
+        // provide more info to user/developer
         $error = 'Order failed. Please try again.';
+        // append underlying error if available (e.g. duplicate phone)
+        $msg = $e->getMessage();
+        if($msg) {
+            $error .= ' (' . htmlspecialchars($msg) . ')';
+        }
     }
 }
 ?>
@@ -149,31 +253,76 @@ if($_SERVER['REQUEST_METHOD'] == 'POST' && empty($error)) {
         
         <?php if(empty($error)): ?>
         <form method="POST">
+            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(csrf_token()) ?>">
             <div class="row">
                 <div class="col-md-8">
-                    <?php if(!$user_id): ?>
                     <div class="card mb-4">
                         <div class="card-body">
-                            <h4>Your Information</h4>
+                            <h4>Contact Information</h4>
+                            <?php if(!$user_id): ?>
                             <div class="mb-3">
                                 <label class="form-label">Full Name</label>
                                 <input type="text" name="full_name" class="form-control" required>
                             </div>
+                            <?php endif; ?>
                             <div class="mb-3">
                                 <label class="form-label">Email</label>
-                                <input type="email" name="email" class="form-control" required>
+                                <input type="email" name="email" class="form-control" value="<?= htmlspecialchars($email_prefill) ?>" required <?= $user_id ? 'readonly' : '' ?>>
                             </div>
+                            <div class="mb-3">
+                                <label class="form-label">Phone</label>
+                                <input type="tel" name="phone" class="form-control" value="<?= htmlspecialchars($phone_prefill) ?>" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Alternate phone (optional)</label>
+                                <input type="tel" name="alt_phone" class="form-control" placeholder="secondary number" value="<?= htmlspecialchars($alt_prefill) ?>">
+                                <small class="text-muted">Cannot be same as primary</small>
+                            </div>
+                            <?php if(!$user_id): ?>
                             <div class="mb-3">
                                 <label class="form-label">Password (optional to create account)</label>
                                 <input type="password" name="password" class="form-control">
                             </div>
+                            <?php endif; ?>
                         </div>
                     </div>
-                    <?php endif; ?>
                     <div class="card mb-4">
                         <div class="card-body">
                             <h4>Shipping Address</h4>
-                            <textarea name="address" class="form-control" rows="4" required></textarea>
+                            <div class="mb-3">
+                                <label class="form-label">Address Line 1</label>
+                                <input type="text" name="address_line1" class="form-control" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Address Line 2</label>
+                                <input type="text" name="address_line2" class="form-control">
+                            </div>
+                            <div class="row">
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label">City</label>
+                                    <input type="text" name="city" class="form-control" required>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label">State/Province</label>
+                                    <input type="text" name="state" class="form-control" required>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label">ZIP/Postal Code</label>
+                                    <input type="text" name="zip" class="form-control" required>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Country</label>
+                                <input type="text" name="country" class="form-control" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Phone Number</label>
+                                <input type="tel" name="phone" class="form-control" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Special instructions for rider</label>
+                                <textarea name="rider_instructions" class="form-control" rows="2" placeholder="e.g. leave at gate"></textarea>
+                            </div>
                         </div>
                     </div>
                     
@@ -232,5 +381,18 @@ if($_SERVER['REQUEST_METHOD'] == 'POST' && empty($error)) {
     </div>
     
     <?php include 'includes/footer.php'; ?>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(function(){
+            $('form').on('submit', function(){
+                const phone = $('input[name=phone]').val().trim();
+                const alt = $('input[name=alt_phone]').val().trim();
+                if(alt && phone && alt === phone) {
+                    alert('Alternate number must differ from primary phone.');
+                    return false;
+                }
+            });
+        });
+    </script>
 </body>
 </html>

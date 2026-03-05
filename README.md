@@ -6,12 +6,12 @@ Amazon-inspired full-featured e-commerce platform built with PHP, MySQL, Bootstr
 
 ### For Buyers
 - Browse products by category
-- Search functionality
+- Search functionality with pagination, filters, and autocomplete suggestions
 - Product details with reviews
-- Shopping cart management
-- Checkout and order placement
-- Order history tracking
-- Order number generation and "Track Order" page for checking status
+- Advanced REST APIs for products, cart, orders and authentication (JSON responses)
+- Shopping cart management (add/update/remove/clear), persistent across sessions
+- Checkout and order placement (API powered)
+- Order history tracking, order item detail view and tracking
 - Contact form, returns portal (with image upload) and help center for customer support
 - User profile management
 
@@ -23,12 +23,24 @@ Amazon-inspired full-featured e-commerce platform built with PHP, MySQL, Bootstr
 - Inventory management
 
 ### General Features
-- User authentication (Login/Register)
+- User authentication (Login/Register) with AJAX API support and CSRF protection
+- Login throttling and password hashing (bcrypt) for security
+- Email verification and password reset workflow
 - Multiple user types (Buyer, Seller, Admin)
+- RESTful JSON APIs for core functionality (see /api/*)
+- Cross-site request forgery (CSRF) tokens included on all forms
+- Input sanitization and output escaping for XSS prevention
+- Rate limiting on sensitive endpoints
 - Responsive design
-- Clean and modern UI
-- Secure password hashing
-- Session management
+- Clean and modern UI with Bootstrap 5
+- jQuery-powered dynamic components and modal dialogs
+- Session management with persistent guest carts
+- Autocomplete search suggestions and infinite scrolling
+- Admin/seller dashboards with statistics, analytics and CRUD tools
+- Export tools (CSV) and bulk product uploads
+- Orders now include two separate contact columns (`phone`, `alt_phone`) as well as a free‑text “rider instructions” field for delivery notes.
+- Checkout collects full address, email, primary phone, and optional secondary phone (must differ); primary phone is unique across orders (and also enforced on user accounts) to prevent duplicate contact numbers.
+
 
 ## Installation
 
@@ -53,11 +65,33 @@ Amazon-inspired full-featured e-commerce platform built with PHP, MySQL, Bootstr
    - Start Apache and MySQL
    - Access via `http://localhost/your-folder-name`
 
+> **Database updates:**
+> ```sql
+> ALTER TABLE orders ADD COLUMN phone VARCHAR(20) DEFAULT NULL;
+> ALTER TABLE orders ADD COLUMN alt_phone VARCHAR(20) DEFAULT NULL;
+> ALTER TABLE orders ADD COLUMN rider_instructions TEXT DEFAULT NULL;
+> ALTER TABLE orders ADD UNIQUE INDEX IF NOT EXISTS idx_orders_phone (phone);
+> ALTER TABLE users ADD UNIQUE INDEX IF NOT EXISTS idx_users_phone (phone);
+> ```
+> A unique index on `orders.phone` (and optionally `users.phone`) prevents duplicate primary contact numbers; checkout and the API perform validation and will notify users if a phone is already in use.
+
 ## Default Accounts
 
 ## Support Data
 - New database tables `contacts` and `return_requests` store messages and return submissions.
-- `return_requests` now optionally records `product_id` and `seller_id` (looked up by product name).
+- `return_requests` now includes `buyer_id` and a `status` field (pending/accepted/declined) and optionally records `product_id` and `seller_id` (looked up by product name).
+- Admin and seller dashboards show shipping address on orders and allow updating status.
+- Both dashboards display return requests for relevant sellers; admin and sellers can accept/decline requests. Decisions are visible to buyers when they are logged in.
+
+**Migration note:**
+If you already have a `return_requests` table, run the following SQL to add new columns:
+```sql
+ALTER TABLE return_requests 
+  ADD buyer_id INT DEFAULT NULL, 
+  ADD status VARCHAR(20) NOT NULL DEFAULT 'pending',
+  ADD CONSTRAINT return_requests_ibfk_3 FOREIGN KEY (buyer_id) REFERENCES users(id);
+```
+Existing rows will default to `pending` and no buyer association.
 - Admin dashboard lists the most recent entries for each and shows seller name for returns.
 
 Orders & tracking pages now display the names/quantities of products in each order.

@@ -1,6 +1,7 @@
 <?php
 session_start();
 require_once 'config/database.php';
+require_once 'includes/security.php';
 
 if(isset($_SESSION['user_id'])) {
     header('Location: index.php');
@@ -14,6 +15,8 @@ $success = '';
 $user_type = $_GET['type'] ?? 'buyer';
 
 if($_SERVER['REQUEST_METHOD'] == 'POST') {
+    require_csrf_or_fail();
+
     // trim/normalize email
     $email = strtolower(trim($_POST['email']));
     $password = password_hash($_POST['password'], PASSWORD_DEFAULT);
@@ -92,6 +95,7 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
                         <?php endif; ?>
                         
                         <form method="POST" id="registerForm">
+                            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(csrf_token()) ?>">
                             <div class="mb-3">
                                 <label class="form-label">Account Type</label>
                                 <select name="user_type" class="form-select" id="userType" required>
