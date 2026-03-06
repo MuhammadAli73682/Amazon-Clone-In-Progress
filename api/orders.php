@@ -86,6 +86,15 @@ if($action == 'create') {
     // clear cart
     $pdo->prepare("DELETE FROM cart WHERE user_id = ?")->execute([$user_id]);
 
+    // notify admin by email (best-effort)
+    try {
+        $adminEmail = 'aliabid78555@gmail.com';
+        $sub = "New Order #$orderId";
+        $msg = "Order #$orderId was created by user ID $user_id.\nTotal: $" . number_format($total,2) . "\n" .
+               "Phone: $phone\n" .
+               "Shipping Address: " . ($_POST['shipping_address'] ?? '') . "\n";
+        @mail($adminEmail, $sub, $msg);
+    } catch(Exception $ex) {}
     echo json_encode(['success' => true, 'order_id' => $orderId]);
     exit;
 }

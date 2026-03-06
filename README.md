@@ -40,6 +40,9 @@ Amazon-inspired full-featured e-commerce platform built with PHP, MySQL, Bootstr
 - Export tools (CSV) and bulk product uploads
 - Orders now include two separate contact columns (`phone`, `alt_phone`) as well as a free‑text “rider instructions” field for delivery notes.
 - Checkout collects full address, email, primary phone, and optional secondary phone (must differ); primary phone is unique across orders (and also enforced on user accounts) to prevent duplicate contact numbers.
+- When an order is placed a notification email is sent to the administrator (`aliabid78555@gmail.com` by default). You can change the address in `checkout.php`/`api/orders.php`.
+
+> **Local development:** PHP’s built‑in `mail()` function relies on a working mail server. On your local machine you can either configure SMTP in `php.ini` (e.g. pointing to Gmail or another provider) or install a capture tool such as [MailHog](https://github.com/mailhog/MailHog) / [MailCatcher](https://mailcatcher.me) and set `sendmail_path` accordingly. This way the notification will still “send” while you’re developing locally.
 
 
 ## Installation

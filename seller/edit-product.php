@@ -30,11 +30,24 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
     $stock = $_POST['stock'];
     $category = $_POST['category'];
     $status = $_POST['status'];
+
+    // handle image upload if present
+    $imagePath = $product['image'];
+    if(isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
+        $tmp = $_FILES['image']['tmp_name'];
+        $ext = pathinfo($_FILES['image']['name'], PATHINFO_EXTENSION);
+        $newName = 'prod_' . $product_id . '_' . time() . '.' . $ext;
+        $dest = __DIR__ . '/../assets/images/products/' . $newName;
+        if(move_uploaded_file($tmp, $dest)) {
+            $imagePath = 'assets/images/products/' . $newName;
+        }
+    }
     
-    $stmt = $pdo->prepare("UPDATE products SET name = ?, description = ?, price = ?, stock = ?, category = ?, status = ? WHERE id = ? AND seller_id = ?");
-    if($stmt->execute([$name, $description, $price, $stock, $category, $status, $product_id, $seller_id])) {
+    $stmt = $pdo->prepare("UPDATE products SET name = ?, description = ?, price = ?, stock = ?, category = ?, status = ?, image = ? WHERE id = ? AND seller_id = ?");
+    if($stmt->execute([$name, $description, $price, $stock, $category, $status, $imagePath, $product_id, $seller_id])) {
         $success = 'Product updated successfully!';
         $product = array_merge($product, $_POST);
+        $product['image'] = $imagePath;
     } else {
         $error = 'Failed to update product';
     }
@@ -51,7 +64,7 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
     <link rel="stylesheet" href="../assets/css/style.css">
 </head>
 <body>
-    <?php include '../includes/header.php'; ?>
+    <?php include '../includes/backend-header.php'; ?>
     
     <div class="container my-5">
         <h2 class="mb-4">Edit Product</h2>
@@ -66,10 +79,25 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
         
         <div class="card">
             <div class="card-body">
-                <form method="POST">
+                <form method="POST" enctype="multipart/form-data">
                     <div class="mb-3">
                         <label class="form-label">Product Name</label>
                         <input type="text" name="name" class="form-control" value="<?= htmlspecialchars($product['name']) ?>" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Current Image</label><br>
+                        <?php if(!empty($product['image'])): ?>
+                            <img src="../<?= htmlspecialchars($product['image']) ?>" alt="Product image" style="max-width:150px; border:1px solid #ccc;">
+                        <?php else: ?>
+                            <span class="text-muted">No image uploaded</span>
+                        <?php endif; ?>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Change Image</label>
+                        <input type="file" name="image" accept="image/*" class="form-control">
+                        <small class="text-muted">Leave blank to keep existing image.</small>
                     </div>
                     
                     <div class="mb-3">

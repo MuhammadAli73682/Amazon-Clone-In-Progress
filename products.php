@@ -122,7 +122,20 @@ if(isset($_GET['sort'])) { $linkParams['sort'] = $_GET['sort']; }
             <!-- Products -->
             <div class="col-md-9">
                 <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h2 class="mb-0">
+                    <?php if(isset($_GET['category'])):
+                    // simple banner replacement for each category
+                    $catBanners = [
+                        'Electronics' => 'https://source.unsplash.com/1200x300/?electronics,tech',
+                        'Fashion'     => 'https://source.unsplash.com/1200x300/?fashion,clothes',
+                        'Home'        => 'https://source.unsplash.com/1200x300/?home,interior',
+                        'Beauty'      => 'https://source.unsplash.com/1200x300/?beauty,cosmetics',
+                    ];
+                    $bannerImg = $catBanners[$_GET['category']] ?? null;
+                    if($bannerImg): ?>
+                        <img src="<?= $bannerImg ?>" class="img-fluid mb-3" alt="<?= htmlspecialchars($_GET['category']) ?>">
+                    <?php endif; ?>
+                <?php endif; ?>
+                <h2 class="mb-0">
                         <?php if(isset($_GET['search'])): ?>
                             Search Results for "<?= htmlspecialchars($_GET['search']) ?>"
                         <?php elseif(isset($_GET['seller_id']) && !empty($products)): ?>
@@ -152,6 +165,9 @@ if(isset($_GET['sort'])) { $linkParams['sort'] = $_GET['sort']; }
                     <?php // ensure shop filter is preserved when listing products? handled in query ?>
                     <div class="col-md-4 col-sm-6 mb-4">
                         <div class="product-card">
+                            <?php if(isset($_SESSION['user_id']) && $_SESSION['user_type']==='seller' && $_SESSION['user_id']==$product['seller_id']): ?>
+                                <a href="seller/edit-product.php?id=<?= $product['id'] ?>" class="btn btn-sm btn-outline-primary position-absolute" style="top:10px; right:10px; z-index:10;">Edit</a>
+                            <?php endif; ?>
                             <a href="product-detail.php?id=<?= $product['id'] ?>">
                                 <img src="<?= htmlspecialchars($product['image']) ?>" alt="<?= htmlspecialchars($product['name']) ?>">
                             </a>
@@ -172,7 +188,7 @@ if(isset($_GET['sort'])) { $linkParams['sort'] = $_GET['sort']; }
                                 <button class="btn btn-warning btn-sm add-to-cart" data-id="<?= $product['id'] ?>">
                                     <i class="fas fa-cart-plus"></i> Add to Cart
                                 </button>
-                                <button class="btn btn-sm add-to-wishlist <?= in_array($product['id'], $wishlistIds) ? 'btn-danger' : 'btn-outline-danger' ?>" data-id="<?= $product['id'] ?>">
+                                <button class="btn btn-sm add-to-wishlist mt-2 <?= in_array($product['id'], $wishlistIds) ? 'btn-danger' : 'btn-outline-danger' ?>" data-id="<?= $product['id'] ?>">
                                     <i class="fas fa-heart"></i>
                                 </button>
                             </div>

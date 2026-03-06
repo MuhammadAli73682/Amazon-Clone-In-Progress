@@ -3,9 +3,15 @@ session_start();
 require_once 'config/database.php';
 require_once 'includes/security.php';
 
-// Redirect if already logged in
+// Redirect if already logged in, send to role-specific dashboard
 if(isset($_SESSION['user_id'])) {
-    header('Location: index.php');
+    if($_SESSION['user_type'] === 'seller') {
+        header('Location: seller/dashboard.php');
+    } elseif($_SESSION['user_type'] === 'admin') {
+        header('Location: admin/dashboard.php');
+    } else {
+        header('Location: index.php');
+    }
     exit;
 }
 
@@ -63,7 +69,14 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
             unset($_SESSION['cart']);
         }
 
-        header('Location: index.php');
+        // redirect based on role
+        if($user['user_type'] === 'seller') {
+            header('Location: seller/dashboard.php');
+        } elseif($user['user_type'] === 'admin') {
+            header('Location: admin/dashboard.php');
+        } else {
+            header('Location: index.php');
+        }
         exit;
     } else {
         $error = 'Invalid email or password';

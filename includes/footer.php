@@ -18,7 +18,7 @@
                 <ul class="list-unstyled">
                     <li><a href="<?= BASE_URL ?>/contact.php" class="text-white">Contact Us</a></li>
                     <li><a href="<?= BASE_URL ?>/returns.php" class="text-white">Returns</a></li>
-                    <li><a href="#" class="text-white">Shipping Info</a></li>
+                    <li><a href="<?= BASE_URL ?>/shipping-info.php" class="text-white">Shipping Info</a></li>
                 </ul>
             </div>
             <div class="col-md-3">

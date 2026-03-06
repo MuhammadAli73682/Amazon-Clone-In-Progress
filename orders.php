@@ -15,7 +15,12 @@ if($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['order_id'], $_POST['ac
     if($_POST['action'] === 'cancel') {
         $stmt = $pdo->prepare("UPDATE orders SET status = 'cancelled' WHERE id = ? AND user_id = ?");
         $stmt->execute([$order_id, $user_id]);
-        $cancel_message = "Order #$order_id has been cancelled.";
+        // Get order number for message
+        $on_stmt = $pdo->prepare("SELECT order_number FROM orders WHERE id = ?");
+        $on_stmt->execute([$order_id]);
+        $on = $on_stmt->fetch();
+        $order_num = $on ? $on['order_number'] : $order_id;
+        $cancel_message = "Order #$order_num has been cancelled.";
     }
 }
 
@@ -68,7 +73,7 @@ foreach($orders as &$order) {
         <div class="order-card">
             <div class="row">
                 <div class="col-md-8">
-                    <h5>Order #<?= $order['id'] ?></h5>
+                    <h5>Order #<?= $order['order_number'] ?></h5>
                     <p class="text-muted">Placed on <?= date('F j, Y', strtotime($order['created_at'])) ?></p>
                     <p><strong>Total:</strong> $<?= number_format($order['total_amount'], 2) ?></p>
                     <?php if(!empty($order['items'])): ?>

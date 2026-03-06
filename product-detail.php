@@ -57,7 +57,10 @@ $reviews = $stmt->fetchAll();
     
     <div class="container my-5">
         <div class="row">
-            <div class="col-md-6">
+            <div class="col-md-6 position-relative">
+                <?php if(isset($_SESSION['user_id']) && $_SESSION['user_type']==='seller' && $_SESSION['user_id']==$product['seller_id']): ?>
+                    <a href="seller/edit-product.php?id=<?= $product['id'] ?>" class="btn btn-sm btn-outline-primary position-absolute" style="top:10px; right:10px; z-index:10;">Edit</a>
+                <?php endif; ?>
                 <img src="<?= htmlspecialchars($product['image']) ?>" class="product-detail-img" alt="<?= htmlspecialchars($product['name']) ?>">
             </div>
             

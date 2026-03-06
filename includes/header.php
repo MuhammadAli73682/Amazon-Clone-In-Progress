@@ -80,6 +80,15 @@ window.CSRF_TOKEN = <?= json_encode($csrfToken) ?>;
                         </a>
                     </li>
 
+                    <!-- Backend shortcut -->
+                    <li class="nav-item">
+                        <?php if($user_type === 'seller'): ?>
+                            <a class="nav-link" href="<?= BASE_URL ?>/seller/dashboard.php">Go to Seller</a>
+                        <?php elseif($user_type === 'admin'): ?>
+                            <a class="nav-link" href="<?= BASE_URL ?>/admin/dashboard.php">Go to Admin</a>
+                        <?php endif; ?>
+                    </li>
+
                     <!-- Seller Dashboard -->
                     <?php if($user_type === 'seller'): ?>
                     <li class="nav-item">

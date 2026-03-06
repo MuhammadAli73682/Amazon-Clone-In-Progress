@@ -25,7 +25,7 @@ $products = $stmt->fetchAll();
     <link rel="stylesheet" href="../assets/css/style.css">
 </head>
 <body>
-    <?php include '../includes/header.php'; ?>
+    <?php include '../includes/backend-header.php'; ?>
     
     <div class="container my-5">
         <div class="d-flex justify-content-between align-items-center mb-4">

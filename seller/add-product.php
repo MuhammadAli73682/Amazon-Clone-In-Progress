@@ -17,10 +17,20 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
     $price = $_POST['price'];
     $stock = $_POST['stock'];
     $category = $_POST['category'];
-    $image = 'assets/images/products/default.jpg';
-    
+    $imagePath = 'assets/images/products/default.jpg';
+
+    if(isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
+        $tmp = $_FILES['image']['tmp_name'];
+        $ext = pathinfo($_FILES['image']['name'], PATHINFO_EXTENSION);
+        $newName = 'prod_' . time() . '.' . $ext;
+        $dest = __DIR__ . '/../assets/images/products/' . $newName;
+        if(move_uploaded_file($tmp, $dest)) {
+            $imagePath = 'assets/images/products/' . $newName;
+        }
+    }
+
     $stmt = $pdo->prepare("INSERT INTO products (seller_id, name, description, price, stock, category, image) VALUES (?, ?, ?, ?, ?, ?, ?)");
-    if($stmt->execute([$seller_id, $name, $description, $price, $stock, $category, $image])) {
+    if($stmt->execute([$seller_id, $name, $description, $price, $stock, $category, $imagePath])) {
         $success = 'Product added successfully!';
     } else {
         $error = 'Failed to add product';
@@ -38,7 +48,7 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
     <link rel="stylesheet" href="../assets/css/style.css">
 </head>
 <body>
-    <?php include '../includes/header.php'; ?>
+    <?php include '../includes/backend-header.php'; ?>
     
     <div class="container my-5">
         <h2 class="mb-4">Add New Product</h2>
@@ -53,7 +63,7 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
         
         <div class="card">
             <div class="card-body">
-                <form method="POST">
+                <form method="POST" enctype="multipart/form-data">
                     <div class="mb-3">
                         <label class="form-label">Product Name</label>
                         <input type="text" name="name" class="form-control" required>
@@ -87,6 +97,12 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
                                 <option value="Toys">Toys</option>
                             </select>
                         </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Product Image</label>
+                        <input type="file" name="image" accept="image/*" class="form-control">
+                        <small class="text-muted">Optional. Will use default if left blank.</small>
                     </div>
                     
                     <button type="submit" class="btn btn-success">

@@ -7,12 +7,12 @@ if(!isset($_SESSION['user_id'])) {
     exit;
 }
 
-$order_id = intval($_GET['id'] ?? 0);
+$order_number = $_GET['id'] ?? '';
 $user_id = $_SESSION['user_id'];
 
 // fetch order
-$stmt = $pdo->prepare("SELECT * FROM orders WHERE id = ? AND user_id = ?");
-$stmt->execute([$order_id, $user_id]);
+$stmt = $pdo->prepare("SELECT * FROM orders WHERE order_number = ? AND user_id = ?");
+$stmt->execute([$order_number, $user_id]);
 $order = $stmt->fetch();
 
 // also grab user contact info
@@ -32,7 +32,7 @@ if(!$order) {
 
 // fetch items
 $stmt2 = $pdo->prepare("SELECT oi.*, p.name FROM order_items oi JOIN products p ON oi.product_id = p.id WHERE oi.order_id = ?");
-$stmt2->execute([$order_id]);
+$stmt2->execute([$order['id']]);
 $items = $stmt2->fetchAll();
 
 $siteName = 'ShopHub';
@@ -43,7 +43,7 @@ $logoUrl = ''; // not used when rendering styled text
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Invoice #<?= $order_id ?> - ShopHub</title>
+    <title>Invoice #<?= $order_number ?> - ShopHub</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         body { background:#f0f0f0; padding:40px; font-family: Arial, sans-serif; color: #333; }
@@ -71,7 +71,7 @@ $logoUrl = ''; // not used when rendering styled text
             <div class="brand-logo"><?= htmlspecialchars($siteName) ?></div>
             <div class="right">
                 <div><strong>Date:</strong> <?= date('F j, Y', strtotime($order['created_at'])) ?></div>
-                <div><strong>Invoice #</strong> <?= $order_id ?></div>
+                <div><strong>Invoice #</strong> <?= $order_number ?></div>
             </div>
         </div>
 

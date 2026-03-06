@@ -10,6 +10,7 @@ try {
     $pdo->exec("ALTER TABLE orders ADD COLUMN IF NOT EXISTS phone VARCHAR(20) NULL");
     $pdo->exec("ALTER TABLE orders ADD COLUMN IF NOT EXISTS alt_phone VARCHAR(20) NULL");
     $pdo->exec("ALTER TABLE orders ADD COLUMN IF NOT EXISTS rider_instructions TEXT NULL");
+    $pdo->exec("ALTER TABLE orders ADD COLUMN IF NOT EXISTS order_number VARCHAR(20) UNIQUE NULL");
     // unique constraint on phone to prevent duplicates
     $pdo->exec("ALTER TABLE orders ADD UNIQUE INDEX IF NOT EXISTS idx_orders_phone (phone)");
 } catch(Exception $e) {}
@@ -186,12 +187,20 @@ if($_SERVER['REQUEST_METHOD'] == 'POST' && empty($error)) {
     }
     $total += 5; // shipping
     
+    // Generate unique order number (minimum 5 digits)
+    $order_number = null;
+    do {
+        $order_number = mt_rand(10000, 99999999); // 5 to 8 digits
+        $check = $pdo->prepare("SELECT id FROM orders WHERE order_number = ?");
+        $check->execute([$order_number]);
+    } while ($check->fetch());
+    
     try {
         $pdo->beginTransaction();
         
         // Create order
-        $stmt = $pdo->prepare("INSERT INTO orders (user_id, total_amount, shipping_address, payment_method, phone, alt_phone, rider_instructions) VALUES (?, ?, ?, ?, ?, ?, ?)");
-        $stmt->execute([$user_id, $total, $address, $payment_method, $phone, $alt_phone ?: null, $rider_instructions]);
+        $stmt = $pdo->prepare("INSERT INTO orders (user_id, total_amount, shipping_address, payment_method, phone, alt_phone, rider_instructions, order_number) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+        $stmt->execute([$user_id, $total, $address, $payment_method, $phone, $alt_phone ?: null, $rider_instructions, $order_number]);
         $order_id = $pdo->lastInsertId();
         
         // Create order items and update stock
@@ -217,7 +226,19 @@ if($_SERVER['REQUEST_METHOD'] == 'POST' && empty($error)) {
         
         $pdo->commit();
         
-        header('Location: orders.php?success=1&order_id=' . $order_id);
+        // send notification email to admin
+        $adminEmail = 'aliabid78555@gmail.com';
+        $subject = "New Order #$order_number placed";
+        $message = "A new order has been placed on ShopHub.\n\n" .
+                   "Order ID: $order_number\n" .
+                   "User: " . htmlspecialchars($_SESSION['full_name'] ?? 'guest') . "\n" .
+                   "Phone: $phone\n" .
+                   "Total: $" . number_format($total,2) . "\n" .
+                   "Shipping Address:\n" . $address . "\n\n" .
+                   "--\nVisit admin dashboard for details.";
+        @mail($adminEmail, $subject, $message);
+        
+        header('Location: orders.php?success=1&order_id=' . $order_number);
         exit;
     } catch(Exception $e) {
         $pdo->rollBack();

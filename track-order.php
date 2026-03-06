@@ -10,7 +10,7 @@ if($_SERVER['REQUEST_METHOD'] === 'POST') {
     if($order_number === '' || !ctype_digit($order_number)) {
         $error = 'Please enter a valid order number.';
     } else {
-        $stmt = $pdo->prepare("SELECT * FROM orders WHERE id = ?");
+        $stmt = $pdo->prepare("SELECT * FROM orders WHERE order_number = ?");
         $stmt->execute([$order_number]);
         $order = $stmt->fetch();
 
@@ -63,7 +63,7 @@ if($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         <?php if($order): ?>
             <div class="order-card">
-                <h5>Order #<?= $order['id'] ?></h5>
+                <h5>Order #<?= $order['order_number'] ?></h5>
                 <p class="text-muted">Placed on <?= date('F j, Y', strtotime($order['created_at'])) ?></p>
                 <p><strong>Status:</strong>
                     <?php
@@ -97,5 +97,9 @@ if($_SERVER['REQUEST_METHOD'] === 'POST') {
     </div>
 
     <?php include 'includes/footer.php'; ?>
+    
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="assets/js/main.js"></script>
 </body>
 </html>

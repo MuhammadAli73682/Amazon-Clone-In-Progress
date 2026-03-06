@@ -35,6 +35,29 @@ $shops = $shops->fetchAll();
 <body>
     <?php include 'includes/header.php'; ?>
     
+    <!-- Banner Carousel -->
+    <div id="mainCarousel" class="carousel slide" data-bs-ride="carousel">
+      <div class="carousel-inner">
+        <div class="carousel-item active">
+          <img src="https://source.unsplash.com/1600x600/?shopping,store" class="d-block w-100" alt="Banner 1">
+        </div>
+        <div class="carousel-item">
+          <img src="https://source.unsplash.com/1600x600/?fashion,clothes" class="d-block w-100" alt="Banner 2">
+        </div>
+        <div class="carousel-item">
+          <img src="https://source.unsplash.com/1600x600/?electronics,gadgets" class="d-block w-100" alt="Banner 3">
+        </div>
+      </div>
+      <button class="carousel-control-prev" type="button" data-bs-target="#mainCarousel" data-bs-slide="prev">
+        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+        <span class="visually-hidden">Previous</span>
+      </button>
+      <button class="carousel-control-next" type="button" data-bs-target="#mainCarousel" data-bs-slide="next">
+        <span class="carousel-control-next-icon" aria-hidden="true"></span>
+        <span class="visually-hidden">Next</span>
+      </button>
+    </div>
+
     <!-- Hero Section -->
     <div class="hero-section">
         <div class="container">
@@ -52,12 +75,24 @@ $shops = $shops->fetchAll();
     <div class="container my-5">
         <h2 class="mb-4">Shop by Category</h2>
         <div class="row">
+            <?php
+            // simple image mapping for categories; override or expand as needed
+            $catImages = [
+                'Electronics' => 'https://source.unsplash.com/400x400/?electronics',
+                'Fashion'     => 'https://source.unsplash.com/400x400/?fashion',
+                'Home'        => 'https://source.unsplash.com/400x400/?home',
+                'Beauty'      => 'https://source.unsplash.com/400x400/?beauty',
+            ];
+            ?>
             <?php foreach($categories as $cat): ?>
             <div class="col-md-3 col-6 mb-3">
                 <a href="products.php?category=<?= urlencode($cat['category']) ?>" class="category-card">
                     <div class="card text-center">
+                        <?php $img = $catImages[$cat['category']] ?? null; ?>
+                        <?php if($img): ?>
+                        <img src="<?= $img ?>" class="card-img-top" alt="<?= htmlspecialchars($cat['category']) ?>">
+                        <?php endif; ?>
                         <div class="card-body">
-                            <i class="fas fa-box fa-3x mb-3"></i>
                             <h5><?= htmlspecialchars($cat['category']) ?></h5>
                         </div>
                     </div>
