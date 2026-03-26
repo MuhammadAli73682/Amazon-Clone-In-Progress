@@ -8,10 +8,15 @@ CREATE TABLE users (
     password VARCHAR(255) NOT NULL,
     full_name VARCHAR(255) NOT NULL,
     user_type ENUM('buyer', 'seller', 'admin') DEFAULT 'buyer',
+    account_status ENUM('active','pending','rejected') NOT NULL DEFAULT 'active',
     shop_name VARCHAR(255),
     phone VARCHAR(20),
     address TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    review_email_last_sent_at TIMESTAMP NULL DEFAULT NULL,
+    review_email_sent_count INT NOT NULL DEFAULT 0,
+    reviewed_at TIMESTAMP NULL DEFAULT NULL,
+    reviewed_by INT NULL DEFAULT NULL
 );
 
 -- Products table
@@ -25,6 +30,7 @@ CREATE TABLE products (
     category VARCHAR(100),
     image VARCHAR(255),
     status ENUM('active', 'inactive') DEFAULT 'active',
+    reviews_enabled TINYINT(1) NOT NULL DEFAULT 1,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (seller_id) REFERENCES users(id)
 );

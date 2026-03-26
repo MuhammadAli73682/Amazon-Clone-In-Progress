@@ -52,26 +52,37 @@ if($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if(!$error) {
             // ensure the order belongs to current buyer and product exists in that order
-            $orderId = intval($order_number);
-            if($orderId <= 0) {
+            // "order_number" shown to buyers is orders.order_number (not always the numeric orders.id)
+            $orderLookup = trim($order_number);
+            $orderId = ctype_digit($orderLookup) ? intval($orderLookup) : 0;
+
+            if($orderLookup === '') {
                 $error = 'Please provide a valid order number.';
             } else {
                 $pstmt = $pdo->prepare("
-                    SELECT oi.product_id, oi.seller_id, p.name
+                    SELECT
+                        oi.product_id,
+                        oi.seller_id,
+                        p.name,
+                        o.order_number,
+                        o.id AS order_id
                     FROM orders o
                     JOIN order_items oi ON oi.order_id = o.id
                     JOIN products p ON p.id = oi.product_id
-                    WHERE o.id = ? AND o.user_id = ? AND p.name = ?
+                    WHERE o.user_id = ?
+                      AND (o.order_number = ? OR o.id = ?)
+                      AND p.name = ?
                     LIMIT 1
                 ");
-                $pstmt->execute([$orderId, $buyer_id, $product_name]);
+                $pstmt->execute([$buyer_id, $orderLookup, $orderId, $product_name]);
                 $pinfo = $pstmt->fetch();
 
                 if(!$pinfo) {
                     $error = 'Order/product not found for your account.';
                 } else {
-                    $prodId = $pinfo['product_id'];
-                    $sellerId = $pinfo['seller_id'];
+                    $prodId = (int)$pinfo['product_id'];
+                    $sellerId = (int)$pinfo['seller_id'];
+                    $orderNumberToStore = $pinfo['order_number'] ?: (string)$pinfo['order_id'];
                 }
             }
         }
@@ -79,7 +90,7 @@ if($_SERVER['REQUEST_METHOD'] === 'POST') {
         if(!$error) {
             // record this return request in the database
             $stmt = $pdo->prepare("INSERT INTO return_requests (order_number, product_name, product_id, seller_id, buyer_id, reason, image) VALUES (?, ?, ?, ?, ?, ?, ?)");
-            if($stmt->execute([$order_number, $product_name, $prodId, $sellerId, $buyer_id, $reason, $imagePath])) {
+            if($stmt->execute([$orderNumberToStore ?? $order_number, $product_name, $prodId, $sellerId, $buyer_id, $reason, $imagePath])) {
                 $success = 'Return request submitted successfully.';
             } else {
                 $error = 'Failed to save return request.';

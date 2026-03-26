@@ -77,6 +77,9 @@ Amazon-inspired full-featured e-commerce platform built with PHP, MySQL, Bootstr
 > ALTER TABLE users ADD UNIQUE INDEX IF NOT EXISTS idx_users_phone (phone);
 > ```
 > A unique index on `orders.phone` (and optionally `users.phone`) prevents duplicate primary contact numbers; checkout and the API perform validation and will notify users if a phone is already in use.
+>
+> **Seller review workflow:**
+> Run `create_seller_review_columns.sql` to add seller approval fields (pending/active/rejected).
 
 ## Default Accounts
 

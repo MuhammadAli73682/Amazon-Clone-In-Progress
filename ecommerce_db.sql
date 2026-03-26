@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Mar 10, 2026 at 07:57 AM
+-- Generation Time: Mar 24, 2026 at 12:53 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -40,9 +40,7 @@ CREATE TABLE `cart` (
 --
 
 INSERT INTO `cart` (`id`, `user_id`, `product_id`, `quantity`, `added_at`) VALUES
-(8, 14, 17, 1, '2026-02-18 13:00:31'),
-(31, 6, 19, 1, '2026-03-06 09:53:54'),
-(32, 6, 3, 1, '2026-03-06 10:15:15');
+(8, 14, 17, 1, '2026-02-18 13:00:31');
 
 -- --------------------------------------------------------
 
@@ -99,9 +97,12 @@ INSERT INTO `orders` (`id`, `user_id`, `total_amount`, `status`, `shipping_addre
 (7, 15, 2404.99, 'delivered', 'karachi', 'cod', '2026-03-05 09:01:59', NULL, NULL, NULL, NULL),
 (8, 6, 1505.00, 'pending', 'k', 'cod', '2026-03-05 11:09:16', NULL, NULL, NULL, NULL),
 (9, 6, 1084.97, 'pending', '56 Green New Court\nDoloribus blanditiis\nHarum sit proident, Sit commodi volupta 22600\nAd non Nam veniam a\nPhone: +1 (417) 148-7519\nAlt phone: +1 (598) 536-6921', 'cod', '2026-03-05 11:35:19', 'Repudiandae deserunt', NULL, NULL, NULL),
-(10, 6, 2704.98, 'pending', '485 Nobel Extension\nDoloribus blanditiis\nkarachi, sindh 53304\nPakistan\nPhone: 0300 0502754\nAlt phone: +1 (598) 536-6921', 'cod', '2026-03-05 11:58:39', 'leave at door', '0300 0502754', '+1 (598) 536-6921', NULL),
-(11, 6, 904.99, 'pending', '39 Green Clarendon Freeway\nDolorum dolor ut sun\nQuaerat dicta sunt s, Qui recusandae Dolo 69376\nSit nulla eu id co\nPhone: +1 (978) 961-1669\nAlt phone: +1 (134) 235-1064', 'cod', '2026-03-06 06:19:57', 'Rerum quia dolorum q', '+1 (978) 961-1669', '+1 (134) 235-1064', '92870199'),
-(12, 6, 1254.99, 'pending', '30 Rocky Nobel Avenue\nQui ad reprehenderit\nAperiam expedita exe, Sequi asperiores pra 79391\nRatione animi repud\nPhone: +1 (184) 369-9432\nAlt phone: +1 (814) 424-8386', 'card', '2026-03-06 07:54:58', 'Iusto amet minima c', '+1 (184) 369-9432', '+1 (814) 424-8386', '53456394');
+(10, 6, 2704.98, 'processing', '485 Nobel Extension\nDoloribus blanditiis\nkarachi, sindh 53304\nPakistan\nPhone: 0300 0502754\nAlt phone: +1 (598) 536-6921', 'cod', '2026-03-05 11:58:39', 'leave at door', '0300 0502754', '+1 (598) 536-6921', NULL),
+(11, 6, 904.99, 'shipped', '39 Green Clarendon Freeway\nDolorum dolor ut sun\nQuaerat dicta sunt s, Qui recusandae Dolo 69376\nSit nulla eu id co\nPhone: +1 (978) 961-1669\nAlt phone: +1 (134) 235-1064', 'cod', '2026-03-06 06:19:57', 'Rerum quia dolorum q', '+1 (978) 961-1669', '+1 (134) 235-1064', '92870199'),
+(12, 6, 1254.99, 'pending', '30 Rocky Nobel Avenue\nQui ad reprehenderit\nAperiam expedita exe, Sequi asperiores pra 79391\nRatione animi repud\nPhone: +1 (184) 369-9432\nAlt phone: +1 (814) 424-8386', 'card', '2026-03-06 07:54:58', 'Iusto amet minima c', '+1 (184) 369-9432', '+1 (814) 424-8386', '53456394'),
+(13, 17, 379.99, 'processing', '891 Clarendon Extension\nSoluta aut elit vol\nAlias incididunt adi, Molestiae ut sapient 14676\nQuos nostrum cupidat\nPhone: +1 (459) 635-1318\nAlt phone: +1 (294) 176-9283', 'cod', '2026-03-11 11:36:26', 'Architecto facilis e', '+1 (459) 635-1318', '+1 (294) 176-9283', '13305511'),
+(14, 6, 4094.98, 'processing', 'flat 301 al makkah tower\ndr zia uddin ahmed road civil lines\nkarachi, sindh 453006\nPakistan\nPhone: 03313405158', 'cod', '2026-03-12 06:18:38', 'Leave at gate', '03313405158', NULL, '13369597'),
+(15, 6, 185.00, 'processing', '59 Old Road\nTempora ut quo volup\nAut autem porro inve, Sunt pariatur Ulla 32295\nDolor corporis nihil\nPhone: +1 (145) 605-9132\nAlt phone: +1 (712) 621-2754', 'cod', '2026-03-12 06:25:45', 'Mollit et corrupti', '+1 (145) 605-9132', '+1 (712) 621-2754', '51695685');
 
 -- --------------------------------------------------------
 
@@ -141,7 +142,14 @@ INSERT INTO `order_items` (`id`, `order_id`, `product_id`, `seller_id`, `quantit
 (16, 10, 3, 2, 1, 899.99),
 (17, 11, 3, 2, 1, 899.99),
 (18, 12, 3, 2, 1, 899.99),
-(19, 12, 19, 11, 1, 350.00);
+(19, 12, 19, 11, 1, 350.00),
+(20, 13, 4, 2, 1, 24.99),
+(21, 13, 19, 11, 1, 350.00),
+(22, 14, 19, 11, 2, 350.00),
+(23, 14, 3, 2, 2, 899.99),
+(24, 14, 27, 11, 1, 1500.00),
+(25, 14, 31, 11, 1, 90.00),
+(26, 15, 31, 11, 2, 90.00);
 
 -- --------------------------------------------------------
 
@@ -194,8 +202,8 @@ CREATE TABLE `products` (
 INSERT INTO `products` (`id`, `seller_id`, `name`, `description`, `price`, `stock`, `category`, `image`, `status`, `created_at`, `language`, `currency`) VALUES
 (1, 2, 'Wireless Bluetooth Headphones', 'Premium noise-cancelling headphones with 30-hour battery life', 89.99, 49, 'Electronics', 'assets/images/products/headphones.jpg', 'active', '2026-02-17 13:24:32', 'en', 'USD'),
 (2, 2, 'Smart Watch Series 5', 'Fitness tracker with heart rate monitor and GPS', 299.99, 28, 'Electronics', 'assets/images/products/smartwatch.jpg', 'active', '2026-02-17 13:24:32', 'en', 'USD'),
-(3, 2, 'Laptop 15.6 inch', 'Intel i7, 16GB RAM, 512GB SSD, Full HD Display', 899.99, 15, 'Electronics', 'assets/images/products/laptop.jpg', 'active', '2026-02-17 13:24:32', 'en', 'USD'),
-(4, 2, 'Wireless Mouse', 'Ergonomic design with precision tracking', 24.99, 100, 'Electronics', 'assets/images/products/mouse.jpg', 'active', '2026-02-17 13:24:32', 'en', 'USD'),
+(3, 2, 'Laptop 15.6 inch', 'Intel i7, 16GB RAM, 512GB SSD, Full HD Display', 899.99, 13, 'Electronics', 'assets/images/products/laptop.jpg', 'active', '2026-02-17 13:24:32', 'en', 'USD'),
+(4, 2, 'Wireless Mouse', 'Ergonomic design with precision tracking', 24.99, 99, 'Electronics', 'assets/images/products/mouse.jpg', 'active', '2026-02-17 13:24:32', 'en', 'USD'),
 (5, 3, 'Men\'s Casual Shirt', 'Cotton blend, available in multiple colors', 34.99, 75, 'Fashion', 'assets/images/products/shirt.jpg', 'active', '2026-02-17 13:24:32', 'en', 'USD'),
 (6, 3, 'Women\'s Summer Dress', 'Floral print, lightweight fabric', 49.99, 59, 'Fashion', 'assets/images/products/dress.jpg', 'active', '2026-02-17 13:24:32', 'en', 'USD'),
 (7, 3, 'Running Shoes', 'Comfortable athletic shoes for daily wear', 79.99, 40, 'Fashion', 'assets/images/products/shoes.jpg', 'active', '2026-02-17 13:24:32', 'en', 'USD'),
@@ -207,11 +215,72 @@ INSERT INTO `products` (`id`, `seller_id`, `name`, `description`, `price`, `stoc
 (13, 5, 'Blender Pro', '1000W high-speed blender for smoothies', 79.99, 35, 'Home & Kitchen', 'assets/images/products/blender.jpg', 'active', '2026-02-17 13:24:32', 'en', 'USD'),
 (14, 5, 'Bed Sheet Set', 'Soft microfiber, queen size, 4-piece set', 39.99, 90, 'Home & Kitchen', 'assets/images/products/bedsheet.jpg', 'active', '2026-02-17 13:24:32', 'en', 'USD'),
 (15, 5, 'LED Desk Lamp', 'Adjustable brightness with USB charging port', 34.99, 69, 'Home & Kitchen', 'assets/images/products/lamp.jpg', 'active', '2026-02-17 13:24:32', 'en', 'USD'),
-(16, 5, 'Wireless Mouse', 'High quality gaming mouse', 1500.00, 0, NULL, NULL, 'active', '2026-02-18 06:15:21', 'en', 'USD'),
-(17, 5, 'Bluetooth Headphones', 'Noise cancelling headphones', 4500.00, 0, NULL, NULL, 'active', '2026-02-18 06:15:21', 'en', 'USD'),
-(18, 5, 'Mechanical Keyboard', 'RGB backlit keyboard', 6500.00, 0, NULL, NULL, 'active', '2026-02-18 06:15:21', 'en', 'USD'),
-(19, 11, 'Wireless Gaming Mouse', 'High precision 16000 DPI gaming mouse with RGB lighting.\r\nErgonomic design for long gaming sessions.\r\nRechargeable battery with 40 hours backup', 350.00, 3, 'Electronics', 'assets/images/products/default.jpg', 'active', '2026-02-18 06:16:58', 'en', 'USD'),
-(27, 11, 'Bat', 'Ton Cricket Bat ', 1500.00, 1, 'Sports', 'assets/images/products/prod_27_1772779599.webp', 'active', '2026-03-05 09:00:17', 'en', 'USD');
+(16, 5, 'Wireless Mouse', 'High quality gaming mouse', 1500.00, 0, NULL, NULL, 'inactive', '2026-02-18 06:15:21', 'en', 'USD'),
+(17, 5, 'Bluetooth Headphones', 'Noise cancelling headphones', 4500.00, 0, NULL, NULL, 'inactive', '2026-02-18 06:15:21', 'en', 'USD'),
+(18, 5, 'Mechanical Keyboard', 'RGB backlit keyboard', 6500.00, 0, NULL, NULL, 'inactive', '2026-02-18 06:15:21', 'en', 'USD'),
+(19, 11, 'Wireless Gaming Mouse', 'High precision 16000 DPI gaming mouse with RGB lighting.\r\nErgonomic design for long gaming sessions.\r\nRechargeable battery with 40 hours backup', 350.00, 0, 'Electronics', 'assets/images/products/default.jpg', 'inactive', '2026-02-18 06:16:58', 'en', 'USD'),
+(27, 11, 'Bat', 'Ton Cricket Bat ', 1500.00, 0, 'Sports', 'assets/images/products/prod_27_1772779599.webp', 'inactive', '2026-03-05 09:00:17', 'en', 'USD'),
+(28, 11, 'Ball', 'Sheild 36', 20.00, 50, 'Sports', 'assets/images/products/default.jpg', 'active', '2026-03-12 05:43:30', 'en', 'USD'),
+(29, 11, 'Wicket', 'Ton Cricket', 56.00, 50, 'Sports', 'assets/images/products/default.jpg', 'active', '2026-03-12 05:43:30', 'en', 'USD'),
+(30, 11, 'Pads', 'Ton Cricket', 68.00, 50, 'Sports', 'assets/images/products/default.jpg', 'active', '2026-03-12 05:43:30', 'en', 'USD'),
+(31, 11, 'Helmet', 'Ton Cricket', 90.00, 47, 'Books', 'assets/images/products/default.jpg', 'active', '2026-03-12 05:43:30', 'en', 'PKR'),
+(32, 11, 'Gloves', 'Ton Cricket', 46.00, 50, 'Sports', 'assets/images/products/default.jpg', 'inactive', '2026-03-12 05:45:53', 'en', 'USD'),
+(33, 11, 'Harry Potter', 'this is book', 19.99, 10, 'Books', 'assets/images/products/default.jpg', 'active', '2026-03-24 11:36:51', 'en', 'USD');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `product_events`
+--
+
+CREATE TABLE `product_events` (
+  `id` bigint(20) UNSIGNED NOT NULL,
+  `user_id` int(11) DEFAULT NULL,
+  `session_key` varchar(64) DEFAULT NULL,
+  `product_id` int(11) NOT NULL,
+  `event_type` varchar(20) NOT NULL,
+  `quantity` int(11) NOT NULL DEFAULT 1,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `product_events`
+--
+
+INSERT INTO `product_events` (`id`, `user_id`, `session_key`, `product_id`, `event_type`, `quantity`, `created_at`) VALUES
+(1, NULL, 'e7261e84fcd2bac17010ea2a0f5f0054540f849af552199f2986d280af7aef30', 19, 'cart_add', 1, '2026-03-11 10:35:58'),
+(2, NULL, 'e7261e84fcd2bac17010ea2a0f5f0054540f849af552199f2986d280af7aef30', 19, 'view', 1, '2026-03-11 10:36:04'),
+(3, NULL, 'e7261e84fcd2bac17010ea2a0f5f0054540f849af552199f2986d280af7aef30', 4, 'cart_add', 1, '2026-03-11 10:36:35'),
+(4, NULL, 'e7261e84fcd2bac17010ea2a0f5f0054540f849af552199f2986d280af7aef30', 6, 'view', 1, '2026-03-11 11:22:33'),
+(5, NULL, 'e7261e84fcd2bac17010ea2a0f5f0054540f849af552199f2986d280af7aef30', 17, 'view', 1, '2026-03-11 11:23:02'),
+(6, NULL, 'e7261e84fcd2bac17010ea2a0f5f0054540f849af552199f2986d280af7aef30', 17, 'view', 1, '2026-03-11 11:30:25'),
+(7, NULL, 'e7261e84fcd2bac17010ea2a0f5f0054540f849af552199f2986d280af7aef30', 17, 'view', 1, '2026-03-11 11:30:41'),
+(8, NULL, 'e7261e84fcd2bac17010ea2a0f5f0054540f849af552199f2986d280af7aef30', 18, 'view', 1, '2026-03-11 11:33:06'),
+(9, 17, 'e7261e84fcd2bac17010ea2a0f5f0054540f849af552199f2986d280af7aef30', 4, 'purchase', 1, '2026-03-11 11:36:26'),
+(10, 17, 'e7261e84fcd2bac17010ea2a0f5f0054540f849af552199f2986d280af7aef30', 19, 'purchase', 1, '2026-03-11 11:36:26'),
+(11, 11, 'f31a08d404e6baae742aa1ac94b9ac18992425333fb0783aa36c084d599812c6', 31, 'view', 1, '2026-03-12 05:48:47'),
+(12, 11, 'f31a08d404e6baae742aa1ac94b9ac18992425333fb0783aa36c084d599812c6', 19, 'view', 1, '2026-03-12 05:51:34'),
+(13, 6, 'f31a08d404e6baae742aa1ac94b9ac18992425333fb0783aa36c084d599812c6', 1, 'view', 1, '2026-03-12 06:01:33'),
+(14, 6, 'f31a08d404e6baae742aa1ac94b9ac18992425333fb0783aa36c084d599812c6', 19, 'cart_add', 1, '2026-03-12 06:15:13'),
+(15, 6, 'f31a08d404e6baae742aa1ac94b9ac18992425333fb0783aa36c084d599812c6', 27, 'cart_add', 1, '2026-03-12 06:15:14'),
+(16, 6, 'f31a08d404e6baae742aa1ac94b9ac18992425333fb0783aa36c084d599812c6', 3, 'cart_add', 1, '2026-03-12 06:15:16'),
+(17, 6, 'f31a08d404e6baae742aa1ac94b9ac18992425333fb0783aa36c084d599812c6', 31, 'cart_add', 1, '2026-03-12 06:15:18'),
+(18, 6, 'f31a08d404e6baae742aa1ac94b9ac18992425333fb0783aa36c084d599812c6', 19, 'purchase', 2, '2026-03-12 06:18:38'),
+(19, 6, 'f31a08d404e6baae742aa1ac94b9ac18992425333fb0783aa36c084d599812c6', 3, 'purchase', 2, '2026-03-12 06:18:38'),
+(20, 6, 'f31a08d404e6baae742aa1ac94b9ac18992425333fb0783aa36c084d599812c6', 27, 'purchase', 1, '2026-03-12 06:18:38'),
+(21, 6, 'f31a08d404e6baae742aa1ac94b9ac18992425333fb0783aa36c084d599812c6', 31, 'purchase', 1, '2026-03-12 06:18:38'),
+(22, 6, 'f31a08d404e6baae742aa1ac94b9ac18992425333fb0783aa36c084d599812c6', 31, 'cart_add', 1, '2026-03-12 06:25:21'),
+(23, 6, 'f31a08d404e6baae742aa1ac94b9ac18992425333fb0783aa36c084d599812c6', 31, 'purchase', 2, '2026-03-12 06:25:45'),
+(24, 6, 'f31a08d404e6baae742aa1ac94b9ac18992425333fb0783aa36c084d599812c6', 1, 'view', 1, '2026-03-12 06:26:38'),
+(25, 6, 'f31a08d404e6baae742aa1ac94b9ac18992425333fb0783aa36c084d599812c6', 1, 'view', 1, '2026-03-12 06:28:45'),
+(26, 6, 'f31a08d404e6baae742aa1ac94b9ac18992425333fb0783aa36c084d599812c6', 31, 'view', 1, '2026-03-12 06:29:17'),
+(27, 6, 'f31a08d404e6baae742aa1ac94b9ac18992425333fb0783aa36c084d599812c6', 31, 'view', 1, '2026-03-12 06:29:32'),
+(28, 6, 'f31a08d404e6baae742aa1ac94b9ac18992425333fb0783aa36c084d599812c6', 31, 'view', 1, '2026-03-12 06:29:32'),
+(29, 11, '4da12eb982a299b92cded1cf0f3a426e22fd709f61104288fa7ac6ade2cf21ec', 31, 'view', 1, '2026-03-12 06:29:46'),
+(30, 11, '4da12eb982a299b92cded1cf0f3a426e22fd709f61104288fa7ac6ade2cf21ec', 28, 'view', 1, '2026-03-12 06:42:18'),
+(31, 11, '4da12eb982a299b92cded1cf0f3a426e22fd709f61104288fa7ac6ade2cf21ec', 30, 'view', 1, '2026-03-12 06:43:41'),
+(32, 8, 'f31a08d404e6baae742aa1ac94b9ac18992425333fb0783aa36c084d599812c6', 19, 'view', 1, '2026-03-12 07:36:32'),
+(33, 8, 'f31a08d404e6baae742aa1ac94b9ac18992425333fb0783aa36c084d599812c6', 1, 'view', 1, '2026-03-12 08:14:19');
 
 -- --------------------------------------------------------
 
@@ -239,7 +308,8 @@ CREATE TABLE `return_requests` (
 INSERT INTO `return_requests` (`id`, `order_number`, `product_name`, `reason`, `image`, `created_at`, `product_id`, `seller_id`, `buyer_id`, `status`) VALUES
 (1, '2', 'Wireless Gaming Mouse x1', 'maza nahi arha', NULL, '2026-02-18 07:28:57', NULL, NULL, NULL, 'pending'),
 (2, '7', 'Bat x1 (seller: Demo Seller) Laptop 15.6 inch x1 (seller: John Electronics)', 'not same as shown in picture', NULL, '2026-03-05 09:13:37', NULL, NULL, NULL, 'pending'),
-(3, '7', 'Bat x1 (seller: Demo Seller) Laptop 15.6 inch x1 (seller: John Electronics)', 'not same as shown in picture', NULL, '2026-03-05 09:21:57', NULL, NULL, NULL, 'pending');
+(3, '7', 'Bat x1 (seller: Demo Seller) Laptop 15.6 inch x1 (seller: John Electronics)', 'not same as shown in picture', NULL, '2026-03-05 09:21:57', NULL, NULL, NULL, 'pending'),
+(4, '51695685', 'Helmet', 'dosra pasand agaya', NULL, '2026-03-12 07:00:51', 31, 11, 6, 'pending');
 
 -- --------------------------------------------------------
 
@@ -264,7 +334,8 @@ INSERT INTO `reviews` (`id`, `product_id`, `user_id`, `rating`, `comment`, `crea
 (1, 17, 6, 3, 'very good product', '2026-02-19 05:55:57'),
 (2, 3, 6, 3, 'very good', '2026-03-06 06:26:34'),
 (3, 17, 6, 2, 'average', '2026-03-06 10:20:02'),
-(4, 17, 6, 1, 'new', '2026-03-06 10:20:15');
+(4, 17, 6, 1, 'new', '2026-03-06 10:20:15'),
+(5, 31, 6, 3, 'test', '2026-03-12 06:29:32');
 
 -- --------------------------------------------------------
 
@@ -278,32 +349,43 @@ CREATE TABLE `users` (
   `password` varchar(255) NOT NULL,
   `full_name` varchar(255) NOT NULL,
   `user_type` enum('buyer','seller','admin') DEFAULT 'buyer',
+  `account_status` enum('active','pending','rejected') NOT NULL DEFAULT 'active',
   `shop_name` varchar(255) DEFAULT NULL,
   `phone` varchar(20) DEFAULT NULL,
   `address` text DEFAULT NULL,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `review_email_last_sent_at` timestamp NULL DEFAULT NULL,
+  `review_email_sent_count` int(11) NOT NULL DEFAULT 0,
+  `reviewed_at` timestamp NULL DEFAULT NULL,
+  `reviewed_by` int(11) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `users`
 --
 
-INSERT INTO `users` (`id`, `email`, `password`, `full_name`, `user_type`, `shop_name`, `phone`, `address`, `created_at`) VALUES
-(1, 'admin@shophub.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Admin User', 'admin', NULL, NULL, NULL, '2026-02-17 13:24:32'),
-(2, 'seller1@example.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'John Electronics', 'seller', 'TechWorld Store', '555-0101', NULL, '2026-02-17 13:24:32'),
-(3, 'seller2@example.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Sarah Fashion', 'seller', 'Fashion Hub', '555-0102', NULL, '2026-02-17 13:24:32'),
-(4, 'seller3@example.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Mike Books', 'seller', 'Book Paradise', '555-0103', NULL, '2026-02-17 13:24:32'),
-(5, 'seller4@example.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Lisa Home', 'seller', 'Home Essentials', '555-0104', NULL, '2026-02-17 13:24:32'),
-(6, 'buyer1@example.com', '123', 'Alice Johnson', 'buyer', NULL, NULL, '123 Main St, New York, NY 10001', '2026-02-17 13:24:32'),
-(7, 'buyer2@example.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Bob Smith', 'buyer', NULL, NULL, '456 Oak Ave, Los Angeles, CA 90001', '2026-02-17 13:24:32'),
-(8, 'ali@gmail.com', '123', 'Ali Admin', 'admin', NULL, NULL, NULL, '2026-02-18 05:58:26'),
-(9, 'muhammad@gmail.com', '$2y$10$xyFtsThSEviSPwhPoujDCOyj9LBqlsxhTgONkBgf8lzo37o.5pJSe', 'Muhammad', 'buyer', '', '', NULL, '2026-02-18 06:07:21'),
-(10, 'mr@gmail.com', '$2y$10$VVh69S87P48cXKXMGUlePeLqZDS31B0olwknj0ZelnW.QagOzxQka', 'mr', 'buyer', '', '', NULL, '2026-02-18 06:08:21'),
-(11, 'seller@gmail.com', '123', 'Demo Seller', 'seller', 'Demo Shop', '', '', '2026-02-18 06:14:31'),
-(12, 'new@gmail.com', '$2y$10$UdSGa0ZdAxgQTdbaeHYnFOUmijibh3aohuUjRnrBLMmmjepEyiwaG', 'new', 'buyer', '', '', NULL, '2026-02-18 06:43:47'),
-(13, 'aliabid78555@gmail.com', '$2y$10$AKG4cMlWVV0xBQsr3B3yae1biyC0O9iEY7s49mVyGsnRy1llOYAxS', 'aliabid', 'buyer', '', '', NULL, '2026-02-18 07:03:34'),
-(14, 'hello@gmail.com', '$2y$10$e4kgIrRi6pMF5Z6.y4SMHugq85ueE3zGlQY7YVuMRd7kE/FVmAWam', 'aliabid', 'buyer', '', '', NULL, '2026-02-18 13:00:17'),
-(15, 'acc@gmail.com', '$2y$10$iqD90o0wuTiLgHxFvsopw.EeDTWjToqJM/yX47nHIhM8cGrplqfK2', 'aliabid', 'buyer', '', '', NULL, '2026-03-05 08:29:58');
+INSERT INTO `users` (`id`, `email`, `password`, `full_name`, `user_type`, `account_status`, `shop_name`, `phone`, `address`, `created_at`, `review_email_last_sent_at`, `review_email_sent_count`, `reviewed_at`, `reviewed_by`) VALUES
+(1, 'admin@shophub.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Admin User', 'admin', 'active', NULL, NULL, NULL, '2026-02-17 13:24:32', NULL, 0, NULL, NULL),
+(2, 'seller1@example.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'John Electronics', 'seller', 'active', 'TechWorld Store', '555-0101', NULL, '2026-02-17 13:24:32', NULL, 0, NULL, NULL),
+(3, 'seller2@example.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Sarah Fashion', 'seller', 'active', 'Fashion Hub', '555-0102', NULL, '2026-02-17 13:24:32', NULL, 0, NULL, NULL),
+(4, 'seller3@example.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Mike Books', 'seller', 'active', 'Book Paradise', '555-0103', NULL, '2026-02-17 13:24:32', NULL, 0, NULL, NULL),
+(5, 'seller4@example.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Lisa Home', 'seller', 'active', 'Home Essentials', '555-0104', NULL, '2026-02-17 13:24:32', NULL, 0, NULL, NULL),
+(6, 'buyer1@example.com', '123', 'Alice Johnson', 'buyer', 'active', NULL, NULL, '123 Main St, New York, NY 10001', '2026-02-17 13:24:32', NULL, 0, NULL, NULL),
+(7, 'buyer2@example.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Bob Smith', 'buyer', 'active', NULL, NULL, '456 Oak Ave, Los Angeles, CA 90001', '2026-02-17 13:24:32', NULL, 0, NULL, NULL),
+(8, 'ali@gmail.com', '123', 'Ali Admin', 'admin', 'active', NULL, NULL, NULL, '2026-02-18 05:58:26', NULL, 0, NULL, NULL),
+(9, 'muhammad@gmail.com', '$2y$10$xyFtsThSEviSPwhPoujDCOyj9LBqlsxhTgONkBgf8lzo37o.5pJSe', 'Muhammad', 'buyer', 'active', '', '', NULL, '2026-02-18 06:07:21', NULL, 0, NULL, NULL),
+(10, 'mr@gmail.com', '$2y$10$VVh69S87P48cXKXMGUlePeLqZDS31B0olwknj0ZelnW.QagOzxQka', 'mr', 'buyer', 'active', '', '', NULL, '2026-02-18 06:08:21', NULL, 0, NULL, NULL),
+(11, 'seller@gmail.com', '123', 'Demo Seller', 'seller', 'active', 'Demo Shop', '', '', '2026-02-18 06:14:31', NULL, 0, NULL, NULL),
+(12, 'new@gmail.com', '$2y$10$UdSGa0ZdAxgQTdbaeHYnFOUmijibh3aohuUjRnrBLMmmjepEyiwaG', 'new', 'buyer', 'active', '', '', NULL, '2026-02-18 06:43:47', NULL, 0, NULL, NULL),
+(13, 'aliabid78555@gmail.com', '$2y$10$AKG4cMlWVV0xBQsr3B3yae1biyC0O9iEY7s49mVyGsnRy1llOYAxS', 'aliabid', 'buyer', 'active', '', '', NULL, '2026-02-18 07:03:34', NULL, 0, NULL, NULL),
+(14, 'hello@gmail.com', '$2y$10$e4kgIrRi6pMF5Z6.y4SMHugq85ueE3zGlQY7YVuMRd7kE/FVmAWam', 'aliabid', 'buyer', 'active', '', '', NULL, '2026-02-18 13:00:17', NULL, 0, NULL, NULL),
+(15, 'acc@gmail.com', '$2y$10$iqD90o0wuTiLgHxFvsopw.EeDTWjToqJM/yX47nHIhM8cGrplqfK2', 'aliabid', 'buyer', 'active', '', '', NULL, '2026-03-05 08:29:58', NULL, 0, NULL, NULL),
+(16, 'hellobuyer@gmail.com', '$2y$10$EycI0kozgk3NgcO8DxF5dutsfs9pdBoDxSqvKexOWP10t.pSUF.J.', 'new', 'buyer', 'active', '', '', NULL, '2026-03-11 10:25:54', NULL, 0, NULL, NULL),
+(17, 'fiqyl@mailinator.com', '$2y$10$yfMRNIxg7xwdbH0Y3EMdZO.5W4fkHtWc0TijdOPIk4Tn5BAiCT1HS', 'Melissa Mooney', 'buyer', 'active', NULL, '+1 (459) 635-1318', NULL, '2026-03-11 11:36:26', NULL, 0, NULL, NULL),
+(18, '1448351.aptechiic@gmail.com', '$2y$10$69JcRPuwq2w3t1JfQ3FBwOobnAr3Fwg4bQmILMl9Qk.U25MGuzkKC', 'aptect', 'seller', 'active', 'Hello World', '0213405159', NULL, '2026-03-12 07:17:59', '2026-03-12 07:18:32', 1, '2026-03-12 07:19:06', 8),
+(19, 'aliabid@gmail.com', '$2y$10$A.HKVvnMklDWmJkVqo0HQ.pj5hKKY.J22gKrgTVGjqu.TqBdkc6by', 'aliabid', 'seller', 'rejected', 'watch world', '021 3672 3280', NULL, '2026-03-12 07:21:09', '2026-03-12 07:22:02', 1, '2026-03-12 07:28:19', 8),
+(20, 'newtest@gmail.com', '$2y$10$8SnspTXJzD2eIm4PSQzDF.lzHzER/cAjeBc7V/vhXDc20MzQKdg7.', 'new', 'seller', 'rejected', '', '', NULL, '2026-03-12 07:34:39', NULL, 0, '2026-03-12 07:35:06', 8),
+(21, 'testseller@gmail.com', '$2y$10$5O51Ijh1Etej4DajTkOqJulB7LS129yGZqFEWWl44FYI0TR3WWneS', 'test seller', 'seller', 'pending', 'testshop', '03322221721', NULL, '2026-03-24 11:32:12', NULL, 0, NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -375,6 +457,16 @@ ALTER TABLE `products`
   ADD KEY `seller_id` (`seller_id`);
 
 --
+-- Indexes for table `product_events`
+--
+ALTER TABLE `product_events`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_pe_user_date` (`user_id`,`created_at`),
+  ADD KEY `idx_pe_session_date` (`session_key`,`created_at`),
+  ADD KEY `idx_pe_product_type_date` (`product_id`,`event_type`,`created_at`),
+  ADD KEY `idx_pe_type_date` (`event_type`,`created_at`);
+
+--
 -- Indexes for table `return_requests`
 --
 ALTER TABLE `return_requests`
@@ -414,7 +506,7 @@ ALTER TABLE `wishlist`
 -- AUTO_INCREMENT for table `cart`
 --
 ALTER TABLE `cart`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=33;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=36;
 
 --
 -- AUTO_INCREMENT for table `contacts`
@@ -426,13 +518,13 @@ ALTER TABLE `contacts`
 -- AUTO_INCREMENT for table `orders`
 --
 ALTER TABLE `orders`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=16;
 
 --
 -- AUTO_INCREMENT for table `order_items`
 --
 ALTER TABLE `order_items`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=20;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=27;
 
 --
 -- AUTO_INCREMENT for table `password_resets`
@@ -444,25 +536,31 @@ ALTER TABLE `password_resets`
 -- AUTO_INCREMENT for table `products`
 --
 ALTER TABLE `products`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=28;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=34;
+
+--
+-- AUTO_INCREMENT for table `product_events`
+--
+ALTER TABLE `product_events`
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=34;
 
 --
 -- AUTO_INCREMENT for table `return_requests`
 --
 ALTER TABLE `return_requests`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- AUTO_INCREMENT for table `reviews`
 --
 ALTER TABLE `reviews`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
 
 --
 -- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=16;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=22;
 
 --
 -- AUTO_INCREMENT for table `wishlist`

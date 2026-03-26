@@ -24,6 +24,7 @@ $shops = $shops->fetchAll();
 ?>
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -32,30 +33,32 @@ $shops = $shops->fetchAll();
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="assets/css/style.css">
 </head>
+
 <body>
     <?php include 'includes/header.php'; ?>
-    
+
     <!-- Banner Carousel -->
     <div id="mainCarousel" class="carousel slide" data-bs-ride="carousel">
-      <div class="carousel-inner">
-        <div class="carousel-item active">
-          <img src="https://source.unsplash.com/1600x600/?shopping,store" class="d-block w-100" alt="Banner 1">
+        <div class="carousel-inner">
+            <div class="carousel-item active">
+                <img src="https://www.ogtech.pk/images/banners/68d53f9aac620.webp" class="d-block w-100" alt="Banner 1">
+            </div>
+            <div class="carousel-item">
+                <img src="https://www.nystore.pk/images/banners/6958f1872ea58.webp" class="d-block w-100" alt="Banner 2">
+            </div>
+            <div class="carousel-item">
+                <img src="https://www.authentico.pk/images/banners/693bde6c72c5e.webp" class="d-block w-100"
+                    alt="Banner 3">
+            </div>
         </div>
-        <div class="carousel-item">
-          <img src="https://source.unsplash.com/1600x600/?fashion,clothes" class="d-block w-100" alt="Banner 2">
-        </div>
-        <div class="carousel-item">
-          <img src="https://source.unsplash.com/1600x600/?electronics,gadgets" class="d-block w-100" alt="Banner 3">
-        </div>
-      </div>
-      <button class="carousel-control-prev" type="button" data-bs-target="#mainCarousel" data-bs-slide="prev">
-        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-        <span class="visually-hidden">Previous</span>
-      </button>
-      <button class="carousel-control-next" type="button" data-bs-target="#mainCarousel" data-bs-slide="next">
-        <span class="carousel-control-next-icon" aria-hidden="true"></span>
-        <span class="visually-hidden">Next</span>
-      </button>
+        <button class="carousel-control-prev" type="button" data-bs-target="#mainCarousel" data-bs-slide="prev">
+            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+            <span class="visually-hidden">Previous</span>
+        </button>
+        <button class="carousel-control-next" type="button" data-bs-target="#mainCarousel" data-bs-slide="next">
+            <span class="carousel-control-next-icon" aria-hidden="true"></span>
+            <span class="visually-hidden">Next</span>
+        </button>
     </div>
 
     <!-- Hero Section -->
@@ -79,25 +82,25 @@ $shops = $shops->fetchAll();
             // simple image mapping for categories; override or expand as needed
             $catImages = [
                 'Electronics' => 'https://source.unsplash.com/400x400/?electronics',
-                'Fashion'     => 'https://source.unsplash.com/400x400/?fashion',
-                'Home'        => 'https://source.unsplash.com/400x400/?home',
-                'Beauty'      => 'https://source.unsplash.com/400x400/?beauty',
+                'Fashion' => 'https://source.unsplash.com/400x400/?fashion',
+                'Home' => 'https://source.unsplash.com/400x400/?home',
+                'Beauty' => 'https://source.unsplash.com/400x400/?beauty',
             ];
             ?>
-            <?php foreach($categories as $cat): ?>
-            <div class="col-md-3 col-6 mb-3">
-                <a href="products.php?category=<?= urlencode($cat['category']) ?>" class="category-card">
-                    <div class="card text-center">
-                        <?php $img = $catImages[$cat['category']] ?? null; ?>
-                        <?php if($img): ?>
-                        <img src="<?= $img ?>" class="card-img-top" alt="<?= htmlspecialchars($cat['category']) ?>">
-                        <?php endif; ?>
-                        <div class="card-body">
-                            <h5><?= htmlspecialchars($cat['category']) ?></h5>
+            <?php foreach ($categories as $cat): ?>
+                <div class="col-md-3 col-6 mb-3">
+                    <a href="products.php?category=<?= urlencode($cat['category']) ?>" class="category-card">
+                        <div class="card text-center">
+                            <?php $img = $catImages[$cat['category']] ?? null; ?>
+                            <?php if ($img): ?>
+                                <img src="<?= $img ?>" class="card-img-top" alt="<?= htmlspecialchars($cat['category']) ?>">
+                            <?php endif; ?>
+                            <div class="card-body">
+                                <h5><?= htmlspecialchars($cat['category']) ?></h5>
+                            </div>
                         </div>
-                    </div>
-                </a>
-            </div>
+                    </a>
+                </div>
             <?php endforeach; ?>
         </div>
     </div>
@@ -106,17 +109,17 @@ $shops = $shops->fetchAll();
     <div class="container my-5">
         <h2 class="mb-4">Shop by Store</h2>
         <div class="row">
-            <?php foreach($shops as $shop): ?>
-            <div class="col-md-3 col-6 mb-3">
-                <a href="products.php?seller_id=<?= $shop['id'] ?>" class="category-card">
-                    <div class="card text-center">
-                        <div class="card-body">
-                            <i class="fas fa-store fa-3x mb-3"></i>
-                            <h5><?= htmlspecialchars($shop['shop_name']) ?></h5>
+            <?php foreach ($shops as $shop): ?>
+                <div class="col-md-3 col-6 mb-3">
+                    <a href="products.php?seller_id=<?= $shop['id'] ?>" class="category-card">
+                        <div class="card text-center">
+                            <div class="card-body">
+                                <i class="fas fa-store fa-3x mb-3"></i>
+                                <h5><?= htmlspecialchars($shop['shop_name']) ?></h5>
+                            </div>
                         </div>
-                    </div>
-                </a>
-            </div>
+                    </a>
+                </div>
             <?php endforeach; ?>
         </div>
     </div>
@@ -125,40 +128,56 @@ $shops = $shops->fetchAll();
     <div class="container my-5">
         <h2 class="mb-4">Featured Products</h2>
         <div class="row">
-            <?php foreach($products as $product): ?>
-            <div class="col-md-3 col-sm-6 mb-4">
-                <div class="product-card">
-                    <a href="product-detail.php?id=<?= $product['id'] ?>">
-                        <img src="<?= htmlspecialchars($product['image']) ?>" alt="<?= htmlspecialchars($product['name']) ?>">
-                    </a>
-                    <div class="product-info">
-                        <h5><?= htmlspecialchars($product['name']) ?></h5>
-                        <div class="rating">
-                            <?php 
+            <?php foreach ($products as $product): ?>
+                <div class="col-md-3 col-sm-6 mb-4">
+                    <div class="product-card">
+                        <a href="product-detail.php?id=<?= $product['id'] ?>">
+                            <img src="<?= htmlspecialchars($product['image']) ?>"
+                                alt="<?= htmlspecialchars($product['name']) ?>">
+                        </a>
+                        <div class="product-info">
+                            <h5><?= htmlspecialchars($product['name']) ?></h5>
+                            <div class="rating">
+                                <?php
                                 $avg = round($product['avg_rating']);
-                                for($i=1;$i<=5;$i++) {
-                                    if($i <= $avg) echo '<i class="fas fa-star"></i>';
-                                    else echo '<i class="fas fa-star text-muted"></i>';
+                                for ($i = 1; $i <= 5; $i++) {
+                                    if ($i <= $avg)
+                                        echo '<i class="fas fa-star"></i>';
+                                    else
+                                        echo '<i class="fas fa-star text-muted"></i>';
                                 }
-                            ?>
-                            <span>(<?= $product['review_count'] ?>)</span>
+                                ?>
+                                <span>(<?= $product['review_count'] ?>)</span>
+                            </div>
+                            <p class="price">$<?= number_format($product['price'], 2) ?></p>
+                            <p class="seller">by <?= htmlspecialchars($product['shop_name']) ?></p>
+                            <?php if((int)$product['stock'] > 0): ?>
+                                <button class="btn btn-warning btn-sm add-to-cart" data-id="<?= $product['id'] ?>">
+                                    <i class="fas fa-cart-plus"></i> Add to Cart
+                                </button>
+                            <?php else: ?>
+                                <div class="stock-chip stock-chip--out">Out of Stock</div>
+                            <?php endif; ?>
                         </div>
-                        <p class="price">$<?= number_format($product['price'], 2) ?></p>
-                        <p class="seller">by <?= htmlspecialchars($product['shop_name']) ?></p>
-                        <button class="btn btn-warning btn-sm add-to-cart" data-id="<?= $product['id'] ?>">
-                            <i class="fas fa-cart-plus"></i> Add to Cart
-                        </button>
                     </div>
                 </div>
-            </div>
             <?php endforeach; ?>
         </div>
     </div>
 
+    <!-- AI Picks -->
+    <div class="container my-5">
+        <h2 class="mb-4">AI Picks For You</h2>
+        <div class="row" data-ai-reco="1" data-limit="8">
+            <div class="col-12 text-muted">Loading recommendations...</div>
+        </div>
+    </div>
+
     <?php include 'includes/footer.php'; ?>
-    
+
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="assets/js/main.js"></script>
 </body>
+
 </html>

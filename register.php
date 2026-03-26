@@ -2,6 +2,8 @@
 session_start();
 require_once 'config/database.php';
 require_once 'includes/security.php';
+require_once 'includes/auth.php';
+require_once 'includes/mailer.php';
 
 if(isset($_SESSION['user_id'])) {
     header('Location: index.php');
@@ -10,6 +12,10 @@ if(isset($_SESSION['user_id'])) {
 
 $error = '';
 $success = '';
+
+if(!empty($_GET['google_error'])) {
+    $error = (string)$_GET['google_error'];
+}
 
 // allow prefilling account type via query string
 $user_type = $_GET['type'] ?? 'buyer';
@@ -26,40 +32,71 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
     $phone = $_POST['phone'] ?? null;
     
     // Check if email exists (emails stored lowercase)
-    $stmt = $pdo->prepare("SELECT id FROM users WHERE email = ?");
-    $stmt->execute([$email]);
-    
-    if($stmt->fetch()) {
-        $error = 'Email already registered';
-    } else {
-        $stmt = $pdo->prepare("INSERT INTO users (email, password, full_name, user_type, shop_name, phone) VALUES (?, ?, ?, ?, ?, ?)");
-        if($stmt->execute([$email, $password, $full_name, $user_type, $shop_name, $phone])) {
-            // automatically log the new user in
-            $newId = $pdo->lastInsertId();
-            $_SESSION['user_id'] = $newId;
-            $_SESSION['user_type'] = $user_type;
-            $_SESSION['full_name'] = $full_name;
+    $existing = null;
+    try {
+        $stmt = $pdo->prepare("SELECT id, account_status FROM users WHERE email = ?");
+        $stmt->execute([$email]);
+        $existing = $stmt->fetch();
+    } catch(PDOException $e) {
+        // fallback for older schemas
+        $stmt = $pdo->prepare("SELECT id FROM users WHERE email = ?");
+        $stmt->execute([$email]);
+        $row = $stmt->fetch();
+        $existing = $row ? ['id' => $row['id'], 'account_status' => null] : null;
+    }
 
-            // merge any session cart
-            if(!empty($_SESSION['cart']) && is_array($_SESSION['cart'])) {
-                foreach($_SESSION['cart'] as $pid => $qty) {
-                    $stmt2 = $pdo->prepare("SELECT id, quantity FROM cart WHERE user_id = ? AND product_id = ?");
-                    $stmt2->execute([$newId, $pid]);
-                    $exist = $stmt2->fetch();
-                    if($exist) {
-                        $upd = $pdo->prepare("UPDATE cart SET quantity = quantity + ? WHERE id = ?");
-                        $upd->execute([$qty, $exist['id']]);
-                    } else {
-                        $ins = $pdo->prepare("INSERT INTO cart (user_id, product_id, quantity) VALUES (?, ?, ?)");
-                        $ins->execute([$newId, $pid, $qty]);
-                    }
-                }
-                unset($_SESSION['cart']);
+    if($existing) {
+        if(($existing['account_status'] ?? '') === 'rejected') {
+            $error = 'This email is not eligible for registration.';
+        } else {
+            $error = 'Email already registered';
+        }
+    } else {
+        $account_status = ($user_type === 'seller') ? 'pending' : 'active';
+
+        $newId = null;
+        try {
+            $stmt = $pdo->prepare("INSERT INTO users (email, password, full_name, user_type, account_status, shop_name, phone) VALUES (?, ?, ?, ?, ?, ?, ?)");
+            $ok = $stmt->execute([$email, $password, $full_name, $user_type, $account_status, $shop_name, $phone]);
+        } catch(PDOException $e) {
+            // fallback for older schemas (no account_status)
+            $stmt = $pdo->prepare("INSERT INTO users (email, password, full_name, user_type, shop_name, phone) VALUES (?, ?, ?, ?, ?, ?)");
+            $ok = $stmt->execute([$email, $password, $full_name, $user_type, $shop_name, $phone]);
+        }
+
+        if($ok) {
+            $newId = $pdo->lastInsertId();
+
+            // Sellers must be reviewed by admin before they can login
+            if($user_type === 'seller') {
+                $subject = "New seller registration pending review";
+                $body = "A new seller has registered and is pending review.\n\n" .
+                        "Name: {$full_name}\n" .
+                        "Email: {$email}\n" .
+                        "Shop: " . ($shop_name ?: '-') . "\n" .
+                        "Phone: " . ($phone ?: '-') . "\n\n" .
+                        "Review: " . BASE_URL . "/admin/users.php\n";
+                app_notify_admins($pdo, $subject, $body);
+
+                app_send_mail_text(
+                    $email,
+                    "Your seller account is under review",
+                    "Thanks for registering as a seller on ShopHub.\n\n" .
+                    "Your account is currently under review by our admin team.\n" .
+                    "We will update you by email once your account is approved.\n\n" .
+                    "Thank you."
+                );
+
+                header('Location: login.php?review=1');
+                exit;
             }
 
-            // redirect to home
-            header('Location: index.php');
-            exit;
+            login_user_into_session($pdo, [
+                'id' => $newId,
+                'user_type' => $user_type,
+                'full_name' => $full_name,
+            ]);
+            redirect_after_login($user_type);
         } else {
             $error = 'Registration failed';
         }
@@ -133,6 +170,15 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
                             
                             <button type="submit" class="btn btn-warning w-100 mb-3">Register</button>
                         </form>
+
+                        <div id="googleBuyerSignup" style="display: <?= $user_type == 'seller' ? 'none' : 'block' ?>;">
+                            <a href="google-login.php?intent=register" class="btn btn-outline-dark w-100 mb-3">
+                                <i class="fab fa-google"></i> Sign up with Google
+                            </a>
+                        </div>
+                        <p id="googleSellerNote" class="text-muted small text-center mb-3" style="display: <?= $user_type == 'seller' ? 'block' : 'none' ?>;">
+                            Google signup currently creates buyer accounts only. Sellers should use the form above.
+                        </p>
                         
                         <div class="text-center">
                             <p>Already have an account? <a href="login.php">Login here</a></p>
@@ -150,8 +196,12 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
         $('#userType').change(function() {
             if($(this).val() == 'seller') {
                 $('#sellerFields').show();
+                $('#googleBuyerSignup').hide();
+                $('#googleSellerNote').show();
             } else {
                 $('#sellerFields').hide();
+                $('#googleBuyerSignup').show();
+                $('#googleSellerNote').hide();
             }
         });
     </script>

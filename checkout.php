@@ -2,9 +2,12 @@
 session_start();
 require_once 'config/database.php';
 require_once 'includes/security.php';
+require_once 'includes/recommendations.php';
 
 // allow both logged-in users and guests
 $user_id = $_SESSION['user_id'] ?? null;
+// ensure recommendations schema (DDL should not run inside a transaction)
+ensure_recommendations_schema($pdo);
 // make sure orders table has necessary columns
 try {
     $pdo->exec("ALTER TABLE orders ADD COLUMN IF NOT EXISTS phone VARCHAR(20) NULL");
@@ -213,6 +216,9 @@ if($_SERVER['REQUEST_METHOD'] == 'POST' && empty($error)) {
             $upd->execute([$item['quantity'], $item['product_id']]);
             $inactive = $pdo->prepare("UPDATE products SET status = 'inactive' WHERE id = ? AND stock <= 0");
             $inactive->execute([$item['product_id']]);
+
+            // Track purchase (best-effort)
+            track_product_event($pdo, $user_id ? (int)$user_id : null, (int)$item['product_id'], 'purchase', (int)$item['quantity']);
         }
         
         // Clear cart (db or session)
@@ -353,10 +359,6 @@ if($_SERVER['REQUEST_METHOD'] == 'POST' && empty($error)) {
                             <div class="form-check mb-2">
                                 <input class="form-check-input" type="radio" name="payment_method" value="cod" id="cod" checked>
                                 <label class="form-check-label" for="cod">Cash on Delivery</label>
-                            </div>
-                            <div class="form-check">
-                                <input class="form-check-input" type="radio" name="payment_method" value="card" id="card">
-                                <label class="form-check-label" for="card">Credit/Debit Card</label>
                             </div>
                         </div>
                     </div>

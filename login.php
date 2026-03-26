@@ -2,6 +2,8 @@
 session_start();
 require_once 'config/database.php';
 require_once 'includes/security.php';
+require_once 'includes/auth.php';
+require_once 'includes/mailer.php';
 
 // Redirect if already logged in, send to role-specific dashboard
 if(isset($_SESSION['user_id'])) {
@@ -16,6 +18,17 @@ if(isset($_SESSION['user_id'])) {
 }
 
 $error = '';
+$info = '';
+
+if(($_GET['review'] ?? '') === '1') {
+    $info = 'Your seller account request is on review. We will update you by email.';
+}
+if(!empty($_GET['google_error'])) {
+    $error = (string)$_GET['google_error'];
+}
+if(!empty($_GET['google_info'])) {
+    $info = (string)$_GET['google_info'];
+}
 
 // initialize attempt counter
 if(!isset($_SESSION['login_attempts'])) {
@@ -43,41 +56,51 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
 
     // Verify password using hash; also allow a plaintext match for legacy/admin accounts
     if($user && (password_verify($password, $user['password']) || $password === $user['password'])) {
-            // reset throttle counter
-            $_SESSION['login_attempts'] = 0;
-            $_SESSION['last_attempt_time'] = 0;
+        // reset throttle counter (valid credentials)
+        $_SESSION['login_attempts'] = 0;
+        $_SESSION['last_attempt_time'] = 0;
 
-        // set fundamental session values
-        $_SESSION['user_id'] = $user['id'];
-        $_SESSION['user_type'] = $user['user_type'];
-        $_SESSION['full_name'] = $user['full_name'];
+        $account_status = $user['account_status'] ?? 'active';
 
-        // merge any guest session cart into the user's database cart
-        if(!empty($_SESSION['cart']) && is_array($_SESSION['cart'])) {
-            foreach($_SESSION['cart'] as $pid => $qty) {
-                $stmt2 = $pdo->prepare("SELECT id, quantity FROM cart WHERE user_id = ? AND product_id = ?");
-                $stmt2->execute([$user['id'], $pid]);
-                $exist = $stmt2->fetch();
-                if($exist) {
-                    $upd = $pdo->prepare("UPDATE cart SET quantity = quantity + ? WHERE id = ?");
-                    $upd->execute([$qty, $exist['id']]);
-                } else {
-                    $ins = $pdo->prepare("INSERT INTO cart (user_id, product_id, quantity) VALUES (?, ?, ?)");
-                    $ins->execute([$user['id'], $pid, $qty]);
+        // sellers must be approved by admin
+        if(($user['user_type'] ?? '') === 'seller' && $account_status === 'pending') {
+            $info = 'Your account is on review. We will update you by email. Thank you.';
+
+            // Best-effort: send (throttled) reminder email on login attempt
+            try {
+                $last = $user['review_email_last_sent_at'] ?? null;
+                $shouldSend = true;
+                if($last) {
+                    $ts = strtotime((string)$last);
+                    if($ts && (time() - $ts) < 86400) { // 24 hours
+                        $shouldSend = false;
+                    }
                 }
-            }
-            unset($_SESSION['cart']);
-        }
 
-        // redirect based on role
-        if($user['user_type'] === 'seller') {
-            header('Location: seller/dashboard.php');
-        } elseif($user['user_type'] === 'admin') {
-            header('Location: admin/dashboard.php');
+                if($shouldSend) {
+                    app_send_mail_text(
+                        $user['email'],
+                        "Your seller account is under review",
+                        "Your seller account is still under review by our admin team.\n\n" .
+                        "We will update you by email once your account is approved.\n\n" .
+                        "Thank you."
+                    );
+
+                    $upd = $pdo->prepare("UPDATE users SET review_email_last_sent_at = NOW(), review_email_sent_count = review_email_sent_count + 1 WHERE id = ?");
+                    $upd->execute([$user['id']]);
+                }
+            } catch(Throwable $e) {
+                // ignore (older schema / no columns / mail issues)
+            }
+
+            // do not login
+        } elseif($account_status === 'rejected') {
+            // behave like account doesn't exist
+            $error = 'Invalid email or password';
         } else {
-            header('Location: index.php');
+            login_user_into_session($pdo, $user);
+            redirect_after_login($user['user_type']);
         }
-        exit;
     } else {
         $error = 'Invalid email or password';
     }
@@ -105,6 +128,10 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
                     <div class="card-body p-5">
                         <h2 class="text-center mb-4">Login</h2>
 
+                        <?php if($info): ?>
+                            <div class="alert alert-info"><?= htmlspecialchars($info) ?></div>
+                        <?php endif; ?>
+
                         <?php if($error): ?>
                             <div class="alert alert-danger"><?= $error ?></div>
                         <?php endif; ?>
@@ -121,6 +148,10 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
                             </div>
                             <button type="submit" class="btn btn-warning w-100 mb-3">Login</button>
                         </form>
+
+                        <a href="google-login.php" class="btn btn-outline-dark w-100 mb-3">
+                            <i class="fab fa-google"></i> Continue with Google
+                        </a>
 
                         <div class="text-center">
                             <p>Don't have an account? <a href="register.php">Register here</a></p>
